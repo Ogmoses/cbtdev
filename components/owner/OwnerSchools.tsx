@@ -76,7 +76,7 @@ export default function OwnerSchools() {
   }, [load]);
 
   const act = async (id: string, action: "approve" | "suspend" | "reactivate") => {
-    if (action === "suspend" && !window.confirm("Suspend this school? Nobody there will be able to sign in or use the platform until you reactivate it.")) return;
+    if (action === "suspend" && !window.confirm("Suspend this school?\n\nEveryone there — the principal, teachers and students — is signed out right away, including anyone in the middle of an exam, and nobody can sign in until you reactivate it.")) return;
     setBusyId(id);
     setError(null);
     try {
@@ -87,6 +87,10 @@ export default function OwnerSchools() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't update the school.");
+      if (action === "suspend") {
+        const name = schools?.find((s) => s.school_id === id)?.name ?? "The school";
+        setNotice(`${name} is suspended. ${typeof data.signedOut === "number" ? `${data.signedOut} sign-in${data.signedOut === 1 ? " was" : "s were"} ended` : "Everyone there is being signed out"} — open pages sign out within about half a minute.`);
+      }
       if (action === "approve") {
         const name = schools?.find((s) => s.school_id === id)?.name ?? "The school";
         setApproved({ name, link: data.link, emailSent: data.emailSent, adminEmail: data.adminEmail });

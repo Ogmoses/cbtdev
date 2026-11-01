@@ -220,7 +220,15 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ school: updated, link, emailSent, emailError, adminEmail: approvingAdmin?.email ?? null });
+  // Suspending also ends everyone's sign-in at that school right now (teachers, students, the
+  // principal). Without this their open pages would stay signed in until the sign-in expired.
+  let signedOut: number | null = null;
+  if (action === "suspend") {
+    const { data: ended } = await admin.rpc("revoke_school_sessions", { p_school_id: id });
+    signedOut = typeof ended === "number" ? ended : null;
+  }
+
+  return NextResponse.json({ school: updated, link, emailSent, emailError, adminEmail: approvingAdmin?.email ?? null, signedOut });
 }
 
 /**
