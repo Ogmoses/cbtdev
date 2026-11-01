@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Waves, Eye, EyeOff, Loader2, AlertCircle, MailCheck } from "lucide-react";
 
@@ -11,6 +11,10 @@ function slugify(name: string): string {
 
 /** Public: a school asks to join. It stays pending until the platform owner approves it. */
 export default function RegisterSchoolPage() {
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [website, setWebsite] = useState(""); // honeypot: real people never see or fill this
   const [schoolName, setSchoolName] = useState("");
   const [code, setCode] = useState("");
   const [codeEdited, setCodeEdited] = useState(false);
@@ -23,6 +27,39 @@ export default function RegisterSchoolPage() {
   const [done, setDone] = useState<{ emailSent: boolean } | null>(null);
   const [resent, setResent] = useState(false);
 
+  // Cloudflare Turnstile — only shown if the site key is configured; otherwise the page is exactly as before.
+  useEffect(() => {
+    if (!turnstileSiteKey) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const render = () => {
+      if (w.turnstile && widgetRef.current && !widgetRef.current.hasChildNodes()) {
+        w.turnstile.render(widgetRef.current, {
+          sitekey: turnstileSiteKey,
+          callback: (token: string) => setTurnstileToken(token),
+          "expired-callback": () => setTurnstileToken(null),
+          "error-callback": () => setTurnstileToken(null),
+        });
+      }
+    };
+    if (w.turnstile) {
+      render();
+      return;
+    }
+    const existing = document.querySelector("script[data-turnstile]");
+    if (existing) {
+      existing.addEventListener("load", render);
+      return () => existing.removeEventListener("load", render);
+    }
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.dataset.turnstile = "true";
+    script.onload = render;
+    document.head.appendChild(script);
+  }, [turnstileSiteKey]);
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -31,13 +68,20 @@ export default function RegisterSchoolPage() {
       const res = await fetch("/api/schools/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schoolName, code, adminName, adminEmail, password }),
+        body: JSON.stringify({ schoolName, code, adminName, adminEmail, password, website, turnstileToken }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't register your school. Try again.");
       setDone({ emailSent: data.emailSent });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't register your school. Try again.");
+      // A check can only be used once — ask for a fresh one before the next try.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const w = window as any;
+      if (turnstileSiteKey && w.turnstile) {
+        w.turnstile.reset();
+        setTurnstileToken(null);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -142,6 +186,16 @@ export default function RegisterSchoolPage() {
             </div>
           </label>
 
+          {/* Bot trap: invisible and unreachable for people, tempting for bots that fill in every field. */}
+          <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", top: "auto", width: 1, height: 1, overflow: "hidden" }}>
+            <label>
+              Website
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+            </label>
+          </div>
+
+          {turnstileSiteKey && <div ref={widgetRef} className="flex justify-center" />}
+
           {error && (
             <div className="flex items-start gap-2 rounded-md bg-crimson-50 px-3 py-2.5 text-[12.5px] text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500">
               <AlertCircle size={14} className="mt-0.5 shrink-0" />
@@ -151,7 +205,7 @@ export default function RegisterSchoolPage() {
 
           <button
             type="submit"
-            disabled={submitting || !schoolName.trim() || !adminName.trim() || !adminEmail.trim() || password.length < 8}
+            disabled={submitting || !schoolName.trim() || !adminName.trim() || !adminEmail.trim() || password.length < 8 || (Boolean(turnstileSiteKey) && !turnstileToken)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-crimson-600 py-3 text-[13.5px] font-semibold text-on-crimson transition-colors duration-200 hover:bg-crimson-700 disabled:opacity-60"
           >
             {submitting && <Loader2 size={15} className="animate-spin" />}

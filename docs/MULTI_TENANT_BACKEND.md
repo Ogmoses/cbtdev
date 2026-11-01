@@ -111,3 +111,17 @@ is refused until the email is confirmed, then emails the admin their `/s/<code>`
 to send by hand if the email fails). Pending/suspended schools are blocked at sign-in and, independently, by the
 database (`active_school_id()`). `POST /api/schools/resend-verification` answers identically for any address.
 Migrations: `013` (old school_profile dropped), `015` (`verify` token type) — both applied.
+
+## Abuse protection on public endpoints (built)
+
+Public endpoints and their limits (counts live in the `rate_limits` table via `rate_limit_hit()`, migration 018; the
+limiter fails OPEN so a broken limiter never locks real people out):
+
+| Endpoint | Protection |
+|---|---|
+| `POST /api/schools/register` | hidden honeypot field; 5 sign-ups per IP per hour; optional Cloudflare Turnstile; global cap of 30 pending sign-ups per hour as a last resort |
+| `POST /api/schools/resend-verification` | 5 per IP and 3 per email per hour; answers identically whether or not it sent |
+| `POST /api/auth/resolve-student-email` | only MISSES are counted (100 per IP per 10 minutes; a class often shares one Wi-Fi address); exact ID match via `resolve_student_login()` (migration 019) so wildcards like `%` or `*` match nothing |
+
+**Turnstile (optional, free):** create a widget at Cloudflare -> Turnstile, add your site's hostname(s), copy the keys, then in
+Vercel set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (public) and `TURNSTILE_SECRET_KEY` (secret) and redeploy. With no keys set the check is skipped.

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { issueAccessToken } from "@/lib/accessTokens";
 import { sendMail } from "@/lib/mailer";
 import { verifySchoolEmailHtml } from "@/lib/emailTemplates";
+import { allow, clientIp } from "@/lib/rateLimit";
 
 /**
  * POST /api/schools/resend-verification — body: { email }
@@ -19,6 +20,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const admin = createAdminClient();
+
+    // Limits stop this being used to flood someone's inbox. Over the limit it answers
+    // exactly as before (the same "ok"); it just doesn't send.
+    const ip = clientIp(req);
+    if (ip && !(await allow(admin, `resend:${ip}`, 5, 60 * 60))) return reply;
+    if (!(await allow(admin, `resend-email:${address}`, 3, 60 * 60))) return reply;
+
     const { data: user } = await admin.from("users").select("id, full_name, role, schools(name, status)").eq("email", address).maybeSingle();
     const school = Array.isArray(user?.schools) ? user?.schools[0] : user?.schools;
     if (!user || user.role !== "super_admin" || !school || school.status !== "pending") return reply;

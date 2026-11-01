@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { allow, isBlocked, clientIp } from "@/lib/rateLimit";
 
 /**
  * POST /api/auth/resolve-student-email
@@ -17,6 +18,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * error on failure, so it can't be used to enumerate valid student IDs
  * or leak anything else about the account.
  */
+// Wrong guesses per visitor in 10 minutes. Only MISSES are counted, never successful
+// sign-ins, because a whole class often shares one school Wi-Fi address.
+const MAX_MISSES = 100;
+const MISS_WINDOW_SECONDS = 10 * 60;
+
 export async function POST(req: NextRequest) {
   const { studentId, schoolCode } = await req.json();
   if (!studentId?.trim()) {
@@ -24,19 +30,25 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  const notFound = NextResponse.json({ error: "We couldn't find that student ID." }, { status: 404 });
-
-  let query = supabase.from("users").select("email").ilike("admission_number", studentId.trim()).eq("role", "student");
-
-  if (typeof schoolCode === "string" && schoolCode.trim()) {
-    const { data: school } = await supabase.from("schools").select("id").eq("code", schoolCode.trim().toLowerCase()).maybeSingle();
-    if (!school) return notFound; // same generic answer as an unknown ID — no way to probe which codes exist
-    query = query.eq("school_id", school.id);
+  const ip = clientIp(req);
+  if (ip && (await isBlocked(supabase, `lookup-miss:${ip}`, MAX_MISSES, MISS_WINDOW_SECONDS))) {
+    return NextResponse.json({ error: "Too many attempts. Please wait a few minutes and try again." }, { status: 429 });
   }
+  // A miss is counted, then answered the same generic way every time.
+  const miss = async () => {
+    if (ip) await allow(supabase, `lookup-miss:${ip}`, MAX_MISSES, MISS_WINDOW_SECONDS);
+    return NextResponse.json({ error: "We couldn't find that student ID." }, { status: 404 });
+  };
 
-  const { data: matches } = await query.limit(2);
+  // Exact match on the ID (ignoring capitals only) — see migration 019. A pattern match here once let
+  // someone type a wildcard like "%" and match every student.
+  const { data: matches } = await supabase.rpc("resolve_student_login", {
+    p_student_id: studentId,
+    p_school_code: typeof schoolCode === "string" && schoolCode.trim() ? schoolCode : null,
+  });
 
-  if (!matches || matches.length === 0 || !matches[0].email) return notFound;
+  // No such ID, or no such school code — the same generic answer either way, so codes can't be probed.
+  if (!matches || matches.length === 0 || !matches[0].email) return miss();
   if (matches.length > 1) {
     return NextResponse.json({ error: "Please sign in from your school's own link." }, { status: 409 });
   }

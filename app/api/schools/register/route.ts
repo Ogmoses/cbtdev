@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { issueAccessToken } from "@/lib/accessTokens";
 import { sendMail } from "@/lib/mailer";
 import { verifySchoolEmailHtml } from "@/lib/emailTemplates";
+import { allow, clientIp } from "@/lib/rateLimit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 /**
  * POST /api/schools/register — public self-signup for a new school.
@@ -18,7 +20,8 @@ import { verifySchoolEmailHtml } from "@/lib/emailTemplates";
 
 const CODE_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_PENDING_PER_HOUR = 30; // crude flood guard; the owner still sees and approves each one
+const MAX_PENDING_PER_HOUR = 30; // last-resort flood guard across everyone; the owner still sees and approves each one
+const MAX_SIGNUPS_PER_IP_PER_HOUR = 5;
 
 function slugify(name: string): string {
   return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/g, "");
@@ -26,6 +29,20 @@ function slugify(name: string): string {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
+
+  // Honeypot: the form has a hidden "website" box that no person ever fills in. A bot that
+  // fills in every field gives itself away: it is told it worked, and nothing is created.
+  if (String(body.website ?? "").trim()) return NextResponse.json({ ok: true, emailSent: true });
+
+  const ip = clientIp(req);
+  const limiter = createAdminClient();
+  if (ip && !(await allow(limiter, `register:${ip}`, MAX_SIGNUPS_PER_IP_PER_HOUR, 60 * 60))) {
+    return NextResponse.json({ error: "Too many sign-up attempts from your connection. Please try again in about an hour." }, { status: 429 });
+  }
+  if (!(await verifyTurnstile(body.turnstileToken, ip))) {
+    return NextResponse.json({ error: "We couldn't confirm you're a person. Please try again." }, { status: 400 });
+  }
+
   const schoolName = String(body.schoolName ?? "").trim();
   const adminName = String(body.adminName ?? "").trim();
   const adminEmail = String(body.adminEmail ?? "").trim().toLowerCase();
