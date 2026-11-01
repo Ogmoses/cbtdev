@@ -203,7 +203,7 @@ export default function BulkImportModal({ role, classOptions, subjectOptions, on
               <p className="text-[13px] text-ink/60 dark:text-white/60">
                 Upload a CSV with columns {role === "student" ? "full_name, student_id, class" : "full_name, email, staff_id, subjects"}.
               </p>
-              <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-black/15 px-4 py-8 text-center hover:border-black/25">
+              <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-black/15 dark:border-white/20 px-4 py-8 text-center hover:border-black/25">
                 <Upload size={22} className="text-ink/35 dark:text-white/35" />
                 <span className="text-[13px] font-medium text-ink/60 dark:text-white/60">Choose a .csv file</span>
                 <input type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />

@@ -76,7 +76,7 @@ export default function StudentBatchesPage() {
             <div className="mt-5 divide-y divide-black/5 dark:divide-white/10 rounded-lg border border-black/5 dark:border-white/10 bg-white dark:bg-[#1A1C20]">
               {batches.map((b) => (
                 <div key={b.id} className="flex items-center gap-3.5 px-4 py-3.5 sm:px-5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-cream-100 text-crimson-700 dark:text-crimson-500">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-cream-100 dark:bg-white/10 text-crimson-700 dark:text-crimson-500">
                     <CalendarClock size={16} />
                   </div>
                   <div className="min-w-0 flex-1">

@@ -193,7 +193,7 @@ function Field({
           placeholder={placeholder}
           autoFocus={autoFocus}
           inputMode={inputMode}
-          className="w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-[13.5px] outline-none transition-shadow duration-200 focus:border-crimson-500 focus:shadow-focus"
+          className="w-full rounded-lg border border-black/10 bg-white text-ink placeholder:text-ink/35 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder:text-white/35 px-3.5 py-2.5 text-[13.5px] outline-none transition-shadow duration-200 focus:border-crimson-500 focus:shadow-focus"
         />
         {trailingIcon && <div className="absolute right-3 top-1/2 -translate-y-1/2">{trailingIcon}</div>}
       </div>

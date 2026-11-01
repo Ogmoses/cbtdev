@@ -353,7 +353,7 @@ function QuestionRow({ q, onEdit, onDelete, indent }: { q: BankQuestion; onEdit:
     <div className={`flex items-start gap-3.5 px-4 py-3.5 sm:px-5 ${indent ? "pl-9 sm:pl-11" : ""}`}>
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
-          <span className="rounded-full bg-cream-100 px-2 py-0.5 text-[10.5px] font-semibold text-crimson-700 dark:text-crimson-500">
+          <span className="rounded-full bg-cream-100 dark:bg-white/10 px-2 py-0.5 text-[10.5px] font-semibold text-crimson-700 dark:text-crimson-500">
             {QUESTION_TYPE_LABEL[q.type]}
           </span>
           <span className="text-[11.5px] text-ink/40 dark:text-white/40">{q.subjectName}{q.topic ? ` · ${q.topic}` : ""}</span>

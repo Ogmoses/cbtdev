@@ -287,7 +287,7 @@ export default function QuestionEditor({ initial, subjects, classes, defaultSubj
                 </button>
               </div>
             ) : (
-              <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-black/15 px-3.5 py-2.5 text-[12.5px] font-medium text-ink/50 dark:text-white/50 hover:border-black/25 hover:text-ink/70 dark:hover:text-white/70">
+              <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-black/15 dark:border-white/20 px-3.5 py-2.5 text-[12.5px] font-medium text-ink/50 dark:text-white/50 hover:border-black/25 hover:text-ink/70 dark:hover:text-white/70">
                 {uploadingImage ? <Loader2 size={15} className="animate-spin" /> : <ImagePlus size={15} />}
                 {uploadingImage ? "Uploading…" : "Upload image"}
                 <input

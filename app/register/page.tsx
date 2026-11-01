@@ -189,7 +189,7 @@ export default function RegisterPage() {
 
   if (stage === "checking") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-cream-100">
+      <div className="flex min-h-screen items-center justify-center bg-cream-100 dark:bg-[#101114]">
         <Loader2 size={20} className="animate-spin text-crimson-600" />
       </div>
     );
@@ -197,19 +197,19 @@ export default function RegisterPage() {
 
   if (stage === "needs-fallback") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-cream-100 px-4 font-sans">
-        <div className="w-full max-w-sm rounded-lg bg-white p-7 shadow-card-hover sm:p-8">
+      <div className="flex min-h-screen items-center justify-center bg-cream-100 dark:bg-[#101114] px-4 font-sans">
+        <div className="w-full max-w-sm rounded-lg bg-white dark:bg-[#1A1C20] p-7 shadow-card-hover sm:p-8">
           <div className="mb-5 flex flex-col items-center text-center">
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-crimson-50 text-crimson-700">
               <AlertCircle size={20} />
             </div>
-            <h1 className="font-display text-[15px] font-semibold text-ink">That link didn't work</h1>
-            <p className="mt-1 text-[12.5px] text-ink/50">
+            <h1 className="font-display text-[15px] font-semibold text-ink dark:text-white">That link didn't work</h1>
+            <p className="mt-1 text-[12.5px] text-ink/50 dark:text-white/50">
               Often just means your email provider scanned it first. Enter the code from the same email instead.
             </p>
           </div>
 
-          <div className="mb-4 grid grid-cols-2 rounded-lg bg-background-muted p-1">
+          <div className="mb-4 grid grid-cols-2 rounded-lg bg-background-muted dark:bg-white/5 p-1">
             {(["invite", "recovery"] as const).map((t) => (
               <button
                 key={t}
@@ -226,25 +226,25 @@ export default function RegisterPage() {
 
           <form onSubmit={handleFallbackVerify} className="space-y-3.5">
             <label className="block">
-              <span className="mb-1 block text-[12px] font-medium text-ink/60">Email</span>
+              <span className="mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60">Email</span>
               <input
                 type="email"
                 value={fallbackEmail}
                 onChange={(e) => setFallbackEmail(e.target.value)}
                 placeholder={`you@${schoolSlug(school.name)}.edu`}
                 autoFocus
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-[13.5px] outline-none focus:border-crimson-500"
+                className="w-full rounded-lg border border-black/10 dark:border-white/20 px-3.5 py-2.5 text-[13.5px] outline-none focus:border-crimson-500"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-[12px] font-medium text-ink/60">Code from the email</span>
+              <span className="mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60">Code from the email</span>
               <div className="relative">
-                <KeyRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" />
+                <KeyRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/35 dark:text-white/35" />
                 <input
                   value={fallbackCode}
                   onChange={(e) => setFallbackCode(e.target.value)}
                   placeholder="e.g. 123456"
-                  className="w-full rounded-lg border border-black/10 py-2.5 pl-9 pr-3 text-[13.5px] outline-none focus:border-crimson-500"
+                  className="w-full rounded-lg border border-black/10 dark:border-white/20 py-2.5 pl-9 pr-3 text-[13.5px] outline-none focus:border-crimson-500"
                 />
               </div>
             </label>
@@ -266,7 +266,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="mt-4 text-center text-[11.5px] text-ink/45">
+          <p className="mt-4 text-center text-[11.5px] text-ink/45 dark:text-white/45">
             No code in that email either? Ask your admin to resend it from Students &amp; Teachers.
           </p>
         </div>
@@ -275,8 +275,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream-100 px-4 font-sans">
-      <div className="w-full max-w-sm rounded-lg bg-white p-7 shadow-card-hover sm:p-8">
+    <div className="flex min-h-screen items-center justify-center bg-cream-100 dark:bg-[#101114] px-4 font-sans">
+      <div className="w-full max-w-sm rounded-lg bg-white dark:bg-[#1A1C20] p-7 shadow-card-hover sm:p-8">
         <div className="mb-6 flex flex-col items-center text-center">
           {school.logoUrl ? (
             <img src={school.logoUrl} alt="" className="mb-3 h-11 w-11 rounded-lg object-cover" />
@@ -285,13 +285,13 @@ export default function RegisterPage() {
               <Waves size={22} strokeWidth={2.25} />
             </div>
           )}
-          <h1 className="font-display text-[17px] font-semibold text-ink">Welcome to {school.name}</h1>
-          <p className="mt-1 text-[12.5px] text-ink/50">Set a password for {email}</p>
+          <h1 className="font-display text-[17px] font-semibold text-ink dark:text-white">Welcome to {school.name}</h1>
+          <p className="mt-1 text-[12.5px] text-ink/50 dark:text-white/50">Set a password for {email}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <label className="block">
-            <span className="mb-1 block text-[12px] font-medium text-ink/60">Password</span>
+            <span className="mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60">Password</span>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -299,22 +299,22 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
                 autoFocus
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 pr-10 text-[13.5px] outline-none focus:border-crimson-500"
+                className="w-full rounded-lg border border-black/10 dark:border-white/20 px-3.5 py-2.5 pr-10 text-[13.5px] outline-none focus:border-crimson-500"
               />
-              <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink/60">
+              <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 dark:text-white/40 hover:text-ink/60 dark:hover:text-white/60">
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-[12px] font-medium text-ink/60">Confirm password</span>
+            <span className="mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60">Confirm password</span>
             <input
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Type it again"
-              className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-[13.5px] outline-none focus:border-crimson-500"
+              className="w-full rounded-lg border border-black/10 dark:border-white/20 px-3.5 py-2.5 text-[13.5px] outline-none focus:border-crimson-500"
             />
           </label>
 

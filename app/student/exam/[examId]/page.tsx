@@ -102,7 +102,7 @@ function StudentExamContent() {
 
   if (state === "loading") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 dark:bg-[#101114]">
         <Loader2 size={22} className="animate-spin text-crimson-600" />
         <p className="text-[13px] text-ink/50 dark:text-white/50">Starting your exam…</p>
       </div>
@@ -111,7 +111,7 @@ function StudentExamContent() {
 
   if (state === "error" || !session) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 dark:bg-[#101114] px-6 text-center">
         <AlertTriangle size={24} className="text-crimson-600" />
         <p className="max-w-sm text-[14px] text-ink dark:text-white">{error}</p>
         <button onClick={() => router.push("/student")} className="mt-2 rounded-lg bg-crimson-600 px-4 py-2.5 text-[13px] font-semibold text-on-crimson hover:bg-crimson-700">
@@ -123,7 +123,7 @@ function StudentExamContent() {
 
   if (state === "submitted" && submissionResult) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 dark:bg-[#101114] px-6 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
           <CheckCircle2 size={28} />
         </div>
@@ -171,7 +171,7 @@ export default function StudentExamPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 dark:bg-[#101114]">
           <Loader2 size={22} className="animate-spin text-crimson-600" />
         </div>
       }

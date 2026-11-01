@@ -44,13 +44,43 @@ body {
   max-width: 100vw;
 }
 
-/* Dark mode — phase 1 (see lib/colorScheme.ts): only the shared chrome
-   (DashboardLayout, Navbar, Sidebar, the profile page, and small shared
-   components like ErrorState/PageLoading) has matching dark: classes so
-   far. Page-specific content elsewhere in the app doesn't yet, and stays
-   on its light-mode colors even with the `dark` class active — that's
-   expected for now, not a bug, until later passes extend it further. */
+/* Dark mode (see lib/colorScheme.ts). Screens carry their own `dark:` classes;
+   the rules below are the safety net underneath them. */
 html.dark,
 html.dark body {
   background-color: #101114;
+}
+
+/* Native controls (scrollbars, dropdown lists, date pickers, autofill) follow dark mode too. */
+html.dark {
+  color-scheme: dark;
+}
+
+/* Default look for every text box, text area and dropdown in dark mode, so one that
+   forgets to style itself can never end up browser-white with unreadable text.
+   `:where()` gives these rules ZERO weight: any class a field sets itself (bg-white,
+   dark:bg-white/5, …) still wins. */
+:where(html.dark) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]), textarea, select) {
+  background-color: rgb(255 255 255 / 0.05);
+  color: #fff;
+}
+:where(html.dark) :where(input, textarea)::placeholder {
+  color: rgb(255 255 255 / 0.4);
+}
+:where(html.dark) select option {
+  background-color: #1A1C20;
+  color: #fff;
+}
+
+/* The school's accent colour is a dark red in light mode, which is hard to read as TEXT on a dark
+   background. In dark mode, accent text and the pale pink badges use the lighter shades instead —
+   but only on elements that don't set their own dark: colour, so deliberate choices still win. */
+:where(html.dark) :is(.text-crimson-600, .text-crimson-700):not([class*="dark:text-"]) {
+  color: rgb(var(--color-crimson-500));
+}
+:where(html.dark) .bg-crimson-50:not([class*="dark:bg-"]) {
+  background-color: rgb(var(--color-crimson-600) / 0.15);
+}
+:where(html.dark) .bg-crimson-100:not([class*="dark:bg-"]) {
+  background-color: rgb(var(--color-crimson-600) / 0.22);
 }

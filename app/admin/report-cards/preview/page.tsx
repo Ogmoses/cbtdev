@@ -43,18 +43,18 @@ function ReportCardPreviewContent() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 dark:bg-[#101114] px-6 text-center">
         <AlertTriangle size={22} className="text-crimson-600" />
-        <p className="text-[13px] text-ink">{error}</p>
+        <p className="text-[13px] text-ink dark:text-white">{error}</p>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 dark:bg-[#101114]">
         <Loader2 size={20} className="animate-spin text-crimson-600" />
-        <p className="text-[13px] text-ink/50">Loading report card…</p>
+        <p className="text-[13px] text-ink/50 dark:text-white/50">Loading report card…</p>
       </div>
     );
   }
@@ -66,7 +66,7 @@ export default function ReportCardPreviewPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-cream-50 dark:bg-[#101114]">
           <Loader2 size={20} className="animate-spin text-crimson-600" />
         </div>
       }

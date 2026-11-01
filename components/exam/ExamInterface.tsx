@@ -196,7 +196,7 @@ export default function ExamInterface({ exam, sessionId, studentName, initialAns
   handleSubmitRef.current = () => setConfirmOpen(true);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-cream-50 font-sans text-ink dark:text-white">
+    <div className="fixed inset-0 z-50 flex flex-col bg-cream-50 dark:bg-[#101114] font-sans text-ink dark:text-white">
       {/* ---------- Header ---------- */}
       <header className="flex items-center justify-between border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1A1C20] px-4 py-3 sm:px-6">
         <div className="min-w-0">

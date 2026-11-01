@@ -1,32 +1,95 @@
-# Soaring Fountain CBT & School Management Platform 
+# CBT & School Management Platform (multi-school)
 
-A complete, deployable Next.js (App Router) + Supabase project — not just
-source files to copy in. `npm install` and `npm run dev` work directly in
-this folder once Supabase env vars are set.
+A deployable Next.js (App Router) + Supabase platform for computer-based
+testing and school management. **One deployment hosts many independent
+schools** — each with its own people, exams, results, branding and link.
+Originally built for Soaring Fountain Group of Schools, which is now simply
+school #1 on the platform.
 
-**Deploying this for real? See [`DEPLOYMENT.md`](./DEPLOYMENT.md)** —
-step-by-step from this folder to a live URL on GitHub + Supabase + Vercel,
-including the one manual step every setup needs (bootstrapping the first
-Super Admin account) and a troubleshooting section.
+> **Standing rule: this README is updated with every change** (the "Current
+> state" section below, plus a new entry at the bottom). If something here
+> disagrees with the code, the code is right and this file is a bug — fix it.
 
-## Setup notes
-- Fonts: `app/layout.tsx` already loads **Plus Jakarta Sans** (display)
-  and **Inter** (body) via `next/font/google`, exposed as
-  `--font-plus-jakarta` / `--font-inter` to match `tailwind.config.ts`.
-- Every file with a `// TODO` comment is a stub where real Supabase calls
-  (auth, queries) replace sample data — the shapes already mirror the schema.
-- Env vars: copy `.env.example` to `.env.local` and fill in your Supabase
-  project's URL, publishable key, and secret key (see `DEPLOYMENT.md` Part C
-  for exactly where to find each one, including a note on Supabase's
-  ongoing anon/service_role → publishable/secret key rename).
-- Report cards: needs real font files registered with `@react-pdf/renderer`
-  (see `public/fonts/README.md`) — the rest of the app doesn't depend on
-  this, so it's safe to add later.
-- Next.js 16 renamed `middleware.ts` to `proxy.ts` (and the exported
-  function from `middleware` to `proxy`) — this project already uses the
-  new convention in `proxy.ts` at the root.
+**Deploying? See [`DEPLOYMENT.md`](./DEPLOYMENT.md)** (and
+`DEPLOYMENT-MOBILE.md` for doing it from a phone).
 
-## Built so far
+## Current state (read this first)
+
+### Who uses it, and where they go
+| Role | Sees | Lives at |
+|---|---|---|
+| `platform_owner` | every school's status and counts (never their data); adds, approves, suspends and deletes schools; owner settings | `/owner`, `/owner/settings` |
+| `super_admin` | **one** school's admin: people, academics, batches, results, settings | `/admin/...` |
+| `teacher` | their own questions, exams, grading, analytics | `/teacher/...` |
+| `student` | their exams, results, review | `/student/...` |
+
+Each school's entry link is **`/s/<school-code>`** (e.g. `/s/soaring-fountain`).
+The plain `/login` still works and remembers the last school used on that device.
+Schools can register themselves at `/register-school`; they stay **pending** until
+the owner approves them (their admin must confirm their email first).
+
+### How schools are kept apart (three layers)
+1. **Row Level Security** — every policy requires `school_id = active_school_id()`;
+   a pending/suspended school is locked out at the database level.
+2. **Composite foreign keys** — a row can never point at another school's row.
+3. **Auto-fill + lock** — `school_id` is filled from the signed-in user and can never be changed.
+Server routes that use the service role (which ignores RLS) all start with
+`getCallerContext()` (`lib/auth/callerContext.ts`) and filter every query by the
+caller's school. Details: [`docs/MULTI_TENANT_BACKEND.md`](./docs/MULTI_TENANT_BACKEND.md).
+
+### Environment variables (Vercel + `.env.local`)
+| Variable | Purpose | Secret? |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | no |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser key (RLS still gates everything) | no |
+| `SUPABASE_SECRET_KEY` | server-only; bypasses RLS | **yes** |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | outgoing email (invites, confirmations). Currently **Brevo** (`smtp-relay.brevo.com`, 587) | pass is secret |
+| `SMTP_FROM_EMAIL` / `SMTP_FROM_NAME` | sender; must be verified with the provider | no |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | optional Cloudflare robot check on `/register-school`; skipped if unset | secret key is |
+
+A local `npm run build` needs `.env.local` with at least the first two (it is
+git-ignored, so a fresh Codespace never has it):
+`NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key>` — otherwise the build stops
+at "Generating static pages" with "Your project's URL and API key are required".
+Vercel has its own copy, so deployments are unaffected.
+
+### Database migrations (`database/migrations/`) — all applied to the live project
+| # | What it does |
+|---|---|
+| 002–008 | access tokens, admin results access, exam cache/pass-mark/review, theme color, import grouping |
+| 009 | a teacher can only attach their **own** questions to their own exams |
+| 010 | storage buckets `question-images`, `school-assets` |
+| 011 | `platform_owner` role |
+| 012a | **backup** of the pre-multi-tenant rules (`mt_backup_ddl`) — run before 012 |
+| 012 | multi-tenant: `schools`, `school_id` everywhere, composite FKs, tenant RLS, per-school storage paths, branding + stats functions |
+| 012_rollback | puts the database back to pre-012 (only valid with ONE school and before 013) — tooling, not applied |
+| 013 | dropped the old single-school `school_profile` |
+| 014 | a newly activated school gets the standard grading scale (A 70+ … F below 40) |
+| 015 | `verify` token type (school-signup email confirmation) |
+| 016 | `delete_school_permanently()` — wipes a whole school in one transaction |
+| 017 | `platform_settings` — the owner's own theme + background color |
+| 018 | `rate_limits` + `rate_limit_hit()` / `rate_limit_blocked()` |
+| 019 | `resolve_student_login()` — exact student-ID match (no wildcards) |
+| 020 | `revoke_school_sessions()` — signs a school's people out when it is suspended |
+Tests: `database/tests/multi_tenant_isolation_test.sql` (33 checks, rolls itself back).
+
+### How a change gets to production
+Unzip the update over the repo (`unzip -o <zip>`), `npm run build`, `git add -A`,
+commit, `git push` — Vercel deploys on push. Apply any new migration in Supabase
+**before** deploying code that needs it (unless the migration says otherwise), and
+never while an exam is running if it touches exam tables. Delete each zip after use
+(`rm -f *.zip`) — Codespaces storage is metered and the free allowance is small.
+
+### Known limitations / still open
+- No custom domain yet: the site runs on `*.vercel.app`; emails come from a
+  Gmail/verified single sender, so some may land in spam until a real domain is added.
+- The bell is an **action list** computed live (no history, no read/unread, no push).
+- Question/diagram cropping is aspect-preset + pan/zoom, not free-form corner handles.
+- Leaked Password Protection (Supabase dashboard) is a manual switch.
+- Report cards use built-in Helvetica (Latin-1 only; names with ẹ/ọ/ṣ may not print).
+
+## Built so far (the original single-school build; see "Current state" above for today's architecture)
 | Area | File |
 |---|---|
 | Database schema | `database/schema.sql` |
@@ -60,7 +123,7 @@ Teacher portal is now complete end to end.
 | Backend: manual-grading endpoint — records a teacher's mark, rolls up `results` once a session is fully graded | `app/api/student-answers/grade/route.ts` |
 | Student exam page wired to the above (device fingerprint, loading/error states) | `app/student/exam/[examId]/page.tsx` |
 
-## Still to build
+## Still to build (historical — superseded by "Current state" above)
 - ~~Teacher creation not populating `teacher_subjects`~~ — resolved: the
   People screen has a per-teacher subject-and-class assignment editor.
 - ~~Logo / question image uploads saved as `data:` URLs~~ — resolved in
@@ -481,7 +544,7 @@ section for what's genuinely tested vs. best-effort.
   questions — and in the Exam Builder's question picker, the whole group
   can be added to an exam in one tap instead of 60 individual ones.
 
-## Still to build (continued)
+## Still to build (continued; historical)
 - Bulk question import's theory/essay-section splitting is best-effort
   only — see above. Worth revisiting with more real documents if a
   teacher hits a case it handles badly.
@@ -533,8 +596,30 @@ section for what's genuinely tested vs. best-effort.
   never resent (previously a retry resubmitted everything and the successes
   failed as duplicates).
 
-### Still open
+### Still open (Pass 8; historical)
 - ~~Report card fonts~~ — resolved: PDFs use built-in Helvetica, no files
   needed (Latin-1 characters only; see `public/fonts/README.md`).
 - Leaked Password Protection (Supabase dashboard) and the Vercel auto-deploy
   ticket remain manual.
+
+## Pass 9: multi-tenant SaaS, owner console, self-signup, safety nets
+
+- **Multi-tenant platform** (migrations 011–014): `schools` table, `school_id` on all 22 tenant tables, composite foreign keys, tenant-scoped RLS and storage, per-school uniqueness of student IDs / staff IDs / subject codes (one email = one school), default grading scale for new schools. Verified with a rolled-back dry run (33/33 isolation checks) and a verified rollback script.
+- **Server routes** (`lib/auth/callerContext.ts`): every service-role route scopes by the caller's school; the grading route reads only that school's grading scale; student login emails now include the school code (`<code>.<id>@students.internal`) — existing students keep their stored emails.
+- **Branding everywhere comes from `schools`** (`lib/schoolBranding.ts`, `components/SchoolProvider.tsx`, `lib/useSchoolProfile.ts`): sidebar, headers, report cards, emails; per-school accent colour and **background (secondary) colour** (Settings has both pickers). `/s/<code>` pages are branded server-side.
+- **Owner console** (`/owner`): schools list with counts, add a school (with invite-link fallback if email fails), approve / suspend / reactivate, copy link, **delete a whole school** (type its code to confirm; refused during a live exam; irreversible), clear old unconfirmed sign-ups, owner Settings (own theme + background).
+- **School self-signup** (`/register-school` → `/verify-school`): school stays pending with its admin banned until the email is confirmed; the owner approves (refused if email unconfirmed) and the admin is emailed their school link.
+- **Suspend = sign everyone out** (migration 020): suspending ends every sign-in at that school immediately; open pages notice within ~30 s (or when the tab returns) and land on the school's "access is paused" page.
+- **Abuse protection** (migrations 018–019): honeypot + per-IP limits on signup, per-IP/per-email limits on resend, failed-lookup limit on the student-ID check (misses only — a class shares one Wi-Fi), optional Turnstile, and a fix so `%`/`*` can no longer match every student ID.
+- **Photo editor** (`components/ui/ImageCropModal.tsx`): after choosing a logo → round WhatsApp-style crop (saved as a transparent-cornered PNG); question diagrams → framed crop with shapes, rotate, flip, zoom. No new packages; animated GIFs skip it.
+- **Bell** (`lib/useActionItems.ts`): live "needs your attention" list per role (owner: approvals; admin: results to publish, batches today; teacher: answers to mark, batches today; student: upcoming exams, recent results).
+- **Email**: moved from SendGrid (trial ended) to Brevo; `docs/MULTI_TENANT_BACKEND.md` has the details.
+
+## Pass 10: dark-mode audit and fixes
+
+- **Paused/pending school notice** (`app/s/[schoolCode]/layout.tsx`) used dark text with no dark-mode colour, so it was nearly invisible on the dark background — fixed.
+- **Form fields** had no background set, so in dark mode they stayed browser-white (the password eye icon, light grey in dark mode, vanished against them). A zero-weight base rule in `app/globals.css` now gives every text box, text area and dropdown a proper dark default (any field that styles itself still wins), and `color-scheme: dark` makes native controls follow.
+- **Exam screens** (`ExamInterface`, student exam page): full-screen cream backgrounds had no dark variant, leaving white text on cream for a student in dark mode — fixed. Same for the teacher/admin/register screens flagged by the audit (about 40 class strings across 11 files).
+- **Accent text** (the school's dark-red accent used as text/icons/badges) is hard to read on dark: one rule in `globals.css` now lightens it in dark mode on elements that don't set their own dark colour.
+- Deliberately left as-is: the printable report-card "paper" (always light) and the white button on the always-dark photo editor.
+- Audit method: `python3` scan of every `className` string for `bg-white`, `text-ink`, `border-black/…`, `bg-background-muted`, `bg-cream-*`, coloured text and unstyled form fields, with and without a `dark:` counterpart. Rerun it after adding screens.

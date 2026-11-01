@@ -444,7 +444,7 @@ export default function ExamBuilder({ subjects, classes, terms, questionBank, st
         </div>
         <button
           onClick={addBatch}
-          className="mt-3 flex items-center gap-1.5 rounded-lg border border-dashed border-black/15 px-3.5 py-2.5 text-[12.5px] font-medium text-ink/60 dark:text-white/60 hover:border-black/25 hover:text-ink/80 dark:hover:text-white/80"
+          className="mt-3 flex items-center gap-1.5 rounded-lg border border-dashed border-black/15 dark:border-white/20 px-3.5 py-2.5 text-[12.5px] font-medium text-ink/60 dark:text-white/60 hover:border-black/25 hover:text-ink/80 dark:hover:text-white/80"
         >
           <CalendarClock size={14} /> Add batch
         </button>

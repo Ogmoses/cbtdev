@@ -254,7 +254,7 @@ function ProfileSection({ profile, onSave }: { profile: SchoolProfile; onSave: (
             </button>
           </div>
         ) : (
-          <label className="flex h-16 w-16 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-black/15 text-ink/40 dark:text-white/40 hover:border-black/25">
+          <label className="flex h-16 w-16 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-black/15 dark:border-white/20 text-ink/40 dark:text-white/40 hover:border-black/25">
             {uploadingLogo ? <Loader2 size={17} className="animate-spin" /> : <ImagePlus size={17} />}
             <span className="text-[9px] font-medium">{uploadingLogo ? "Uploading" : "Logo"}</span>
             <input

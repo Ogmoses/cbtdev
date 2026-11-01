@@ -28,10 +28,10 @@ export default async function SchoolLayout({ children, params }: { children: Rea
     return (
       <main className="flex min-h-screen items-center justify-center px-6 text-center">
         <div className="max-w-sm">
-          <h1 className="font-display text-xl font-semibold text-ink">
+          <h1 className="font-display text-xl font-semibold text-ink dark:text-white">
             {school.status === "pending" ? "This school isn't active yet" : "This school's access is paused"}
           </h1>
-          <p className="mt-2 text-[14px] text-ink/60">
+          <p className="mt-2 text-[14px] text-ink/60 dark:text-white/60">
             {school.status === "pending"
               ? "It's still waiting for approval. You'll be sent your link once it's ready."
               : "Please contact your school administrator."}
