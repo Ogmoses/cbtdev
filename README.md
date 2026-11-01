@@ -1,4 +1,4 @@
-# Soaring Fountain CBT & School Management Platform
+# Soaring Fountain CBT & School Management Platform 
 
 A complete, deployable Next.js (App Router) + Supabase project — not just
 source files to copy in. `npm install` and `npm run dev` work directly in
