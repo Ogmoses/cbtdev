@@ -72,6 +72,7 @@ Vercel has its own copy, so deployments are unaffected.
 | 018 | `rate_limits` + `rate_limit_hit()` / `rate_limit_blocked()` |
 | 019 | `resolve_student_login()` — exact student-ID match (no wildcards) |
 | 020 | `revoke_school_sessions()` — signs a school's people out when it is suspended |
+| 021 | security hardening from the Supabase advisor: backup table closed to the public, trigger/internal functions no longer callable over the API, fixed `search_path`s |
 Tests: `database/tests/multi_tenant_isolation_test.sql` (33 checks, rolls itself back).
 
 ### How a change gets to production
@@ -82,6 +83,22 @@ never while an exam is running if it touches exam tables. Delete each zip after 
 (`rm -f *.zip`) — Codespaces storage is metered and the free allowance is small.
 
 ### Known limitations / still open
+- **No self-service "forgot password"** for staff: a reset can only be started by an admin's
+  "resend access". A school admin who forgets their password has no way back in (the owner
+  cannot send one either). Highest-priority next build.
+- **No backup / recovery plan confirmed.** Deleting a student or a whole school is permanent
+  (cascades). Check the Supabase plan for daily backups / point-in-time recovery; consider an
+  owner "export school data" before delete.
+- **No audit log** of sensitive owner actions (approve, suspend, delete, add).
+- Students' passwords are derived from full name + student ID (by design, no PIN): anyone who
+  knows both can sign in as that student. A per-student PIN would close it.
+- Leaked Password Protection (Supabase Auth setting) is off — a manual dashboard switch
+  (may need a paid plan).
+- Performance items to revisit only at scale (flagged by the advisor, irrelevant today):
+  RLS rules call `auth.uid()` per row instead of `(select auth.uid())`; the composite foreign
+  keys' child columns have no covering index; several tables have multiple permissive policies.
+- Untested in a real browser by the author: the photo editor's touch gestures, the bell,
+  auto sign-out on suspend. No automated tests for app code (only the database isolation tests).
 - No custom domain yet: the site runs on `*.vercel.app`; emails come from a
   Gmail/verified single sender, so some may land in spam until a real domain is added.
 - The bell is an **action list** computed live (no history, no read/unread, no push).
@@ -623,3 +640,21 @@ section for what's genuinely tested vs. best-effort.
 - **Accent text** (the school's dark-red accent used as text/icons/badges) is hard to read on dark: one rule in `globals.css` now lightens it in dark mode on elements that don't set their own dark colour.
 - Deliberately left as-is: the printable report-card "paper" (always light) and the white button on the always-dark photo editor.
 - Audit method: `python3` scan of every `className` string for `bg-white`, `text-ink`, `border-black/…`, `bg-background-muted`, `bg-cream-*`, coloured text and unstyled form fields, with and without a `dark:` counterpart. Rerun it after adding screens.
+
+## Pass 11: security hardening (migration 021)
+
+- The Supabase security advisor found real exposure created during the multi-tenant work, now closed:
+  `mt_backup_ddl` (the pre-multi-tenant rule backup) was readable by the public API — RLS enabled and all
+  public access revoked; the trigger/internal functions (`set_school_id_default`, `seed_school_defaults`,
+  the two max-score triggers, and especially `recompute_exam_max_score(uuid)`, which let any caller
+  recompute any school's exam) are no longer callable over the API; the RLS helper functions
+  (`current_role_is`, `current_user_*`) are no longer callable by signed-out visitors; two trigger
+  functions got a fixed `search_path`.
+- Verified in a rolled-back dry run before applying: a teacher still reads/writes questions and exams
+  (all triggers fire), a student still reads their exams, signed-out visitors are refused,
+  `get_school_branding` still works for the login page, the server still recomputes scores,
+  and a newly activated school still gets its default grading scale.
+- What the advisor still lists is intentional: `access_tokens`, `rate_limits`, `mt_backup_ddl` have RLS with
+  no policies on purpose (service role only); `get_school_branding` is public for login pages; the
+  remaining signed-in-callable functions are the RLS helpers, `get_user_school_id`, and the owner-only
+  `platform_school_stats`.
