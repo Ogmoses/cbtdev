@@ -110,3 +110,27 @@ export function ownerNewSignupEmailHtml(opts: { schoolName: string; adminName: s
   `;
   return shell("Platform console", body);
 }
+
+
+/** Sent to a school when the platform owner replies to, or changes the status of, one of its support requests. */
+export function supportUpdateEmailHtml(opts: {
+  platformName: string;
+  recipientName: string;
+  subject: string;
+  statusLabel: string;
+  reply: string | null;
+  link: string;
+}): string {
+  const reply = opts.reply
+    ? `<p style="margin:14px 0 4px;color:#1A1A1A80;font-size:11.5px;text-transform:uppercase;letter-spacing:0.04em;">Reply</p>
+       <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;white-space:pre-line;">${escapeHtml(opts.reply)}</p>`
+    : "";
+  const body = `
+    <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">An update on your support request</h1>
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Hi ${escapeHtml(opts.recipientName)},</p>
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;"><strong>${escapeHtml(opts.subject)}</strong></p>
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Status: <strong>${escapeHtml(opts.statusLabel)}</strong></p>
+    ${reply}
+    ${button("View your request", opts.link)}`;
+  return shell(opts.platformName, body);
+}

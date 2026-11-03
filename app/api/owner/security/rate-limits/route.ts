@@ -12,6 +12,7 @@ const RULES: Record<string, { max: number; windowSeconds: number; label: string 
   register: { max: 5, windowSeconds: 3600, label: "School sign-ups (per connection)" },
   resend: { max: 5, windowSeconds: 3600, label: "Verification resends (per connection)" },
   "resend-email": { max: 3, windowSeconds: 3600, label: "Verification resends (per email)" },
+  support: { max: 5, windowSeconds: 3600, label: "Support tickets (per user)" },
   "lookup-miss": { max: 100, windowSeconds: 600, label: "Student ID lookups that missed (per connection)" },
 };
 

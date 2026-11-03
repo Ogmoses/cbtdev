@@ -21,6 +21,8 @@ import {
   Power,
   ShieldAlert,
   Megaphone,
+  LifeBuoy,
+  Inbox,
 } from "lucide-react";
 
 export type Role = "platform_owner" | "super_admin" | "teacher" | "student";
@@ -34,6 +36,7 @@ interface NavItem {
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   platform_owner: [
     { label: "Schools", href: "/owner", icon: Building2 },
+    { label: "Support", href: "/owner/support", icon: Inbox },
     { label: "Broadcasts", href: "/owner/broadcasts", icon: Megaphone },
     { label: "Controls", href: "/owner/controls", icon: Power },
     { label: "Security", href: "/owner/security", icon: ShieldAlert },
@@ -47,6 +50,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Lab Batches", href: "/admin/batches", icon: CalendarClock },
     { label: "Results & Analytics", href: "/admin/results", icon: BarChart3 },
     { label: "Report Cards", href: "/admin/report-cards", icon: FileText },
+    { label: "Help & Support", href: "/admin/support", icon: LifeBuoy },
     { label: "Settings", href: "/admin/settings", icon: Settings },
   ],
   teacher: [
@@ -55,6 +59,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "My Exams", href: "/teacher/exams", icon: BookOpen },
     { label: "Grading Queue", href: "/teacher/grading", icon: ClipboardList },
     { label: "Class Analytics", href: "/teacher/analytics", icon: BarChart3 },
+    { label: "Help & Support", href: "/teacher/support", icon: LifeBuoy },
   ],
   student: [
     { label: "Exam Launchpad", href: "/student", icon: LayoutDashboard },
