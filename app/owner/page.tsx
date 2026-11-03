@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageLoading from "@/components/layout/PageLoading";
 import OwnerSchools from "@/components/owner/OwnerSchools";
+import OwnerTelemetry from "@/components/owner/OwnerTelemetry";
 import { useAuthUser, signOutAndRedirect } from "@/lib/useAuthUser";
 import { roleHome } from "@/lib/roleHome";
 
@@ -20,7 +21,8 @@ export default function OwnerPage() {
   if (!authUser || authUser.role !== "platform_owner") return <PageLoading />;
 
   return (
-    <DashboardLayout role="platform_owner" pageTitle="Schools" userName={authUser.fullName} onLogout={() => signOutAndRedirect(router)}>
+    <DashboardLayout role="platform_owner" pageTitle="Command Center" userName={authUser.fullName} onLogout={() => signOutAndRedirect(router)}>
+      <OwnerTelemetry />
       <OwnerSchools />
     </DashboardLayout>
   );

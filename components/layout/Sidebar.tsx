@@ -24,6 +24,7 @@ import {
   LifeBuoy,
   Inbox,
 } from "lucide-react";
+import { useSupportAttention } from "@/lib/supportAttention";
 
 export type Role = "platform_owner" | "super_admin" | "teacher" | "student";
 
@@ -35,7 +36,7 @@ interface NavItem {
 
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   platform_owner: [
-    { label: "Schools", href: "/owner", icon: Building2 },
+    { label: "Command Center", href: "/owner", icon: Building2 },
     { label: "Support", href: "/owner/support", icon: Inbox },
     { label: "Broadcasts", href: "/owner/broadcasts", icon: Megaphone },
     { label: "Controls", href: "/owner/controls", icon: Power },
@@ -95,6 +96,9 @@ function SidebarContent({ role, userName, onNavigate }: { role: Role; userName: 
     return best;
   }, null);
 
+  // Owner: requests still open / in progress. Admin & teacher: updates they haven't read yet. (Students have no support desk.)
+  const supportCount = useSupportAttention(role !== "student");
+
   const schoolProfile = useSchoolProfile();
   // The platform owner belongs to no school, so show the platform instead of a school.
   const school = role === "platform_owner" ? { name: "Platform Console", motto: "All schools", logoUrl: null } : schoolProfile;
@@ -138,6 +142,14 @@ function SidebarContent({ role, userName, onNavigate }: { role: Role; userName: 
               )}
               <Icon size={18} strokeWidth={2} className={active ? "text-crimson-600 dark:text-crimson-500" : "text-ink/40 group-hover:text-ink/70 dark:text-white/40 dark:group-hover:text-white/70"} />
               <span>{label}</span>
+              {href.endsWith("/support") && supportCount > 0 && (
+                <span
+                  className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-crimson-600 px-1.5 text-[10.5px] font-semibold leading-none text-on-crimson"
+                  aria-label={`${supportCount} need attention`}
+                >
+                  {supportCount > 9 ? "9+" : supportCount}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -28,7 +28,8 @@ export async function GET(req: NextRequest) {
 
   const prefix = req.nextUrl.searchParams.get("prefix")?.trim();
   const admin = createAdminClient();
-  let q = admin.from("rate_limits").select("key, window_start, hits").order("hits", { ascending: false }).limit(200);
+  // "login-event:" keys are internal bookkeeping for the live feed (one per person), not security blocks: keep them out of this list.
+  let q = admin.from("rate_limits").select("key, window_start, hits").not("key", "like", "login-event:%").order("hits", { ascending: false }).limit(200);
   if (prefix) q = q.like("key", `${prefix.replace(/[%_]/g, "")}:%`);
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: "Couldn't load the rate limits." }, { status: 500 });

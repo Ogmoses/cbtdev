@@ -47,6 +47,11 @@ export default function SchoolLogin({ schoolCode }: { schoolCode?: string }) {
     }
   };
 
+  /** Tells the owner's live feed that someone signed in (school + role only; never blocks the sign-in). */
+  const trackLogin = () => {
+    fetch("/api/auth/track-login", { method: "POST", keepalive: true }).catch(() => {});
+  };
+
   const handleStudentLogin = async (fullName: string, studentId: string) => {
     // Student IDs aren't emails, and Supabase Auth signs in by email —
     // resolve it server-side first (there's no session yet to query with).
@@ -62,6 +67,7 @@ export default function SchoolLogin({ schoolCode }: { schoolCode?: string }) {
     const { error } = await supabase.auth.signInWithPassword({ email: data.email, password });
     if (error) throw new Error("Your name and student ID didn't match what's on file. Double-check both and try again.");
     await assertSchoolActive();
+    trackLogin();
     router.push("/student");
   };
 
@@ -70,6 +76,7 @@ export default function SchoolLogin({ schoolCode }: { schoolCode?: string }) {
     if (error) throw new Error("Incorrect email or password.");
 
     await assertSchoolActive();
+    trackLogin();
     const { data: auth } = await supabase.auth.getUser();
     const { data: profile } = await supabase.from("users").select("role").eq("id", auth.user!.id).single();
     router.push(roleHome(profile?.role));

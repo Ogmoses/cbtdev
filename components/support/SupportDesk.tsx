@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, ImagePlus, LifeBuoy, Loader2, X } from "lucide-react";
+import { refreshSupportAttention } from "@/lib/supportAttention";
 
 type Status = "open" | "in_progress" | "resolved";
 
@@ -92,7 +93,14 @@ export default function SupportDesk({ role }: { role: "super_admin" | "teacher" 
     try {
       const res = await fetch("/api/support/tickets", { cache: "no-store" });
       if (!res.ok) throw new Error();
-      setTickets((await res.json()).tickets as Ticket[]);
+      const list = (await res.json()).tickets as Ticket[];
+      setTickets(list);
+      // Opening this page counts as reading the updates: clear the bell and the sidebar dot.
+      if (list.some((t) => t.status !== "open")) {
+        fetch("/api/support/seen", { method: "POST" })
+          .then(() => refreshSupportAttention())
+          .catch(() => {});
+      }
     } catch {
       setError("Couldn't load your requests. Try again.");
       setTickets([]);

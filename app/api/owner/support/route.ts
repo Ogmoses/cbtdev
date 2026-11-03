@@ -126,7 +126,9 @@ export async function PATCH(req: NextRequest) {
     for (const a of admins ?? []) if (a.email && !recipients.has(String(a.email).toLowerCase())) recipients.set(String(a.email).toLowerCase(), { name: a.full_name as string, path: "/admin/support" });
   }
 
-  const platformName = process.env.SMTP_FROM_NAME || "School CBT Platform";
+  // The email is from the SCHOOL's point of view: its name in the header, the footer and the sender line.
+  // (Quotes and line breaks are stripped so a school name can never break the "From" header.)
+  const schoolName = ((school?.name as string | undefined) ?? "").replace(/["\r\n]/g, " ").trim() || process.env.SMTP_FROM_NAME || "School CBT Platform";
   let emailed = 0;
   let emailFailed = false;
   for (const [email, r] of recipients) {
@@ -134,7 +136,8 @@ export async function PATCH(req: NextRequest) {
       await sendMail({
         to: email,
         subject: `Update on your support request: ${t.subject}`,
-        html: supportUpdateEmailHtml({ platformName, recipientName: r.name, subject: t.subject as string, statusLabel: STATUS_LABEL[finalStatus], reply: finalReply, link: `${req.nextUrl.origin}${r.path}` }),
+        fromName: schoolName,
+        html: supportUpdateEmailHtml({ schoolName, recipientName: r.name, subject: t.subject as string, statusLabel: STATUS_LABEL[finalStatus], reply: finalReply, link: `${req.nextUrl.origin}${r.path}` }),
       });
       emailed += 1;
     } catch {

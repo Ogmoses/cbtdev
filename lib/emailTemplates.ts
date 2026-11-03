@@ -114,7 +114,7 @@ export function ownerNewSignupEmailHtml(opts: { schoolName: string; adminName: s
 
 /** Sent to a school when the platform owner replies to, or changes the status of, one of its support requests. */
 export function supportUpdateEmailHtml(opts: {
-  platformName: string;
+  schoolName: string;
   recipientName: string;
   subject: string;
   statusLabel: string;
@@ -132,5 +132,5 @@ export function supportUpdateEmailHtml(opts: {
     <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Status: <strong>${escapeHtml(opts.statusLabel)}</strong></p>
     ${reply}
     ${button("View your request", opts.link)}`;
-  return shell(opts.platformName, body);
+  return shell(opts.schoolName, body);
 }

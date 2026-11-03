@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getSupportAttention, onSupportAttentionRefresh } from "@/lib/supportAttention";
 
 export interface ActionItem {
   key: string;
@@ -89,6 +90,19 @@ export function useActionItems(role: Role) {
         if ((recent ?? 0) > 0) found.push({ key: "results", label: `${plural(recent ?? 0, "recent result", "recent results")} to view`, count: recent ?? 0, href: "/student/results" });
       }
 
+      // Support: the owner sees open / in-progress requests; admins and teachers see updates on their own requests.
+      if (role !== "student") {
+        const support = await getSupportAttention();
+        if (support > 0) {
+          const href = role === "platform_owner" ? "/owner/support" : role === "super_admin" ? "/admin/support" : "/teacher/support";
+          const label =
+            role === "platform_owner"
+              ? `${plural(support, "support request needs", "support requests need")} your attention`
+              : `${plural(support, "support request has", "support requests have")} an update`;
+          found.push({ key: "support", label, count: support, href });
+        }
+      }
+
       setItems(found);
     } catch {
       // A failed lookup just means an empty bell, never a broken page.
@@ -101,7 +115,11 @@ export function useActionItems(role: Role) {
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 2 * 60 * 1000); // keep the dot honest while the page stays open
-    return () => window.clearInterval(timer);
+    const off = onSupportAttentionRefresh(refresh); // a ticket was just saved / read: update right away
+    return () => {
+      window.clearInterval(timer);
+      off();
+    };
   }, [refresh]);
 
   return { items, loading, refresh, total: items.length };

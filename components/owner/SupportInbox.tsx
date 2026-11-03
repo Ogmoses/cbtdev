@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { refreshSupportAttention } from "@/lib/supportAttention";
 
 type Status = "open" | "in_progress" | "resolved";
 type Tab = Status | "all";
@@ -106,6 +107,7 @@ export default function SupportInbox() {
           : `Saved. ${json.emailed} email${json.emailed === 1 ? "" : "s"} sent to the school.`
       );
       setOpenId(null);
+      refreshSupportAttention();
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save.");
