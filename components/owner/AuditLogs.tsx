@@ -26,6 +26,7 @@ const FILTERS: { label: string; value: string }[] = [
   { label: "Reactivated", value: "school.reactivate" },
   { label: "Deletions", value: "school.delete%" },
   { label: "Stale sign-up clean-ups", value: "school.purge_stale%" },
+  { label: "Broadcasts", value: "broadcast.%" },
   { label: "Maintenance & sign-up switches", value: "flags.%" },
   { label: "Security (rate limits)", value: "security.%" },
 ];
@@ -41,6 +42,9 @@ const LABELS: Record<string, string> = {
   "school.purge_stale_started": "Old sign-up removal started",
   "school.purge_stale_completed": "Old sign-up removed",
   "school.purge_stale_failed": "Old sign-up removal failed",
+  "broadcast.create": "Broadcast sent",
+  "broadcast.create_failed": "Broadcast failed to send",
+  "broadcast.end": "Broadcast ended",
   "flags.maintenance_on": "Maintenance mode turned ON",
   "flags.maintenance_off": "Maintenance mode turned off",
   "flags.maintenance_message_changed": "Maintenance message changed",

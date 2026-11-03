@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Sidebar, { type Role } from "./Sidebar";
 import Navbar from "./Navbar";
 import ConnectionBanner from "./ConnectionBanner";
+import AnnouncementBanner from "./AnnouncementBanner";
 
 interface DashboardLayoutProps {
   role: Role;
@@ -45,7 +46,10 @@ export default function DashboardLayout({
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {/* Desktop: dashboards get room for multi-column grids.
               Mobile: children should stack as single-column cards. */}
-          <div className="mx-auto w-full max-w-7xl animate-fade-in">{children}</div>
+          <div className="mx-auto w-full max-w-7xl animate-fade-in">
+            <AnnouncementBanner role={role} />
+            {children}
+          </div>
         </main>
       </div>
     </div>
