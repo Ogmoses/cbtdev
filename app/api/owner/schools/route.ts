@@ -5,6 +5,7 @@ import { deleteSchoolCompletely } from "@/lib/owner/deleteSchool";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { issueAccessToken } from "@/lib/accessTokens";
 import { sendMail } from "@/lib/mailer";
+import { logAudit } from "@/lib/owner/audit";
 import { inviteEmailHtml, schoolApprovedEmailHtml } from "@/lib/emailTemplates";
 
 /**
@@ -117,6 +118,17 @@ export async function POST(req: NextRequest) {
     emailError = err instanceof Error ? err.message : "mail error";
   }
 
+  await logAudit(admin, {
+    actorId: guard.userId,
+    actorEmail: guard.email,
+    action: "school.create",
+    targetType: "school",
+    targetId: school.id,
+    schoolId: school.id,
+    schoolName: school.name,
+    details: { code: school.code, first_admin_email: adminEmail, invite_email_sent: emailSent },
+  });
+
   return NextResponse.json({
     school,
     link: `${req.nextUrl.origin}/s/${school.code}`,
@@ -201,6 +213,22 @@ export async function PATCH(req: NextRequest) {
   const { data: updated, error } = await admin.from("schools").update(patch).eq("id", id).select("id, status, code").single();
   if (error || !updated) return NextResponse.json({ error: error?.message ?? "Couldn't update the school." }, { status: 500 });
 
+  await logAudit(admin, {
+    actorId: guard.userId,
+    actorEmail: guard.email,
+    action: `school.${action}`,
+    targetType: "school",
+    targetId: id,
+    schoolId: id,
+    schoolName: school.name,
+    details: {
+      from_status: school.status,
+      to_status: updated.status,
+      code: updated.code,
+      ...(updated.code !== school.code ? { code_changed_from: school.code } : {}),
+    },
+  });
+
   // Approval: tell the admin their school is live, with their own link.
   // Best effort — the owner is also handed the link to send by hand.
   let emailSent: boolean | null = null;
@@ -245,7 +273,7 @@ export async function DELETE(req: NextRequest) {
   if (!id || typeof confirmCode !== "string") return NextResponse.json({ error: "id and confirmCode are required." }, { status: 400 });
 
   const admin = createAdminClient();
-  const { data: school } = await admin.from("schools").select("id, code").eq("id", id).maybeSingle();
+  const { data: school } = await admin.from("schools").select("id, name, code").eq("id", id).maybeSingle();
   if (!school) return NextResponse.json({ error: "School not found." }, { status: 404 });
   if (confirmCode.trim().toLowerCase() !== school.code) {
     return NextResponse.json({ error: "The code you typed doesn't match this school." }, { status: 400 });
@@ -256,10 +284,20 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "An exam is in progress at this school right now. Wait until it finishes, then try again." }, { status: 409 });
   }
 
+  // The intent is recorded BEFORE anything is erased: if the record can't be written, nothing is deleted.
+  const auditBase = { actorId: guard.userId, actorEmail: guard.email, targetType: "school", targetId: id, schoolId: id, schoolName: school.name };
+  const started = await logAudit(admin, { ...auditBase, action: "school.delete_started", details: { code: school.code } });
+  if (!started) {
+    return NextResponse.json({ error: "Couldn't write the audit record, so nothing was deleted. Try again." }, { status: 500 });
+  }
+
   try {
     const result = await deleteSchoolCompletely(admin, id, school.code);
+    await logAudit(admin, { ...auditBase, action: "school.delete_completed", details: { code: school.code, counts: result.counts, files_removed: result.filesRemoved, files_cleanup_failed: result.filesFailed } });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
-    return NextResponse.json({ error: `Couldn't delete the school. Nothing was changed. (${err instanceof Error ? err.message : "error"})` }, { status: 500 });
+    const message = err instanceof Error ? err.message : "error";
+    await logAudit(admin, { ...auditBase, action: "school.delete_failed", details: { code: school.code, error: message } });
+    return NextResponse.json({ error: `Couldn't delete the school. Nothing was changed. (${message})` }, { status: 500 });
   }
 }

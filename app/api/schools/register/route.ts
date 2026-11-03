@@ -5,6 +5,7 @@ import { sendMail } from "@/lib/mailer";
 import { verifySchoolEmailHtml } from "@/lib/emailTemplates";
 import { allow, clientIp } from "@/lib/rateLimit";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { getPlatformFlags } from "@/lib/platformFlags";
 
 /**
  * POST /api/schools/register — public self-signup for a new school.
@@ -28,6 +29,12 @@ function slugify(name: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // The owner can pause new school sign-ups (Owner console -> Controls). Checked first, on the server,
+  // so closing the form on the page is never the only barrier.
+  if (!(await getPlatformFlags()).signupsOpen) {
+    return NextResponse.json({ error: "New school sign-ups are paused right now. Please check back later.", code: "signups_closed" }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => ({}));
 
   // Honeypot: the form has a hidden "website" box that no person ever fills in. A bot that

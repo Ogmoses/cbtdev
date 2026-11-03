@@ -26,6 +26,23 @@ export default function RegisterSchoolPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ emailSent: boolean } | null>(null);
   const [resent, setResent] = useState(false);
+  const [signupsOpen, setSignupsOpen] = useState<boolean | null>(null); // null = still checking
+
+  // Is the owner currently accepting new schools? If we can't tell, show the form (the server decides anyway).
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/platform/status", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (!cancelled) setSignupsOpen(s ? s.signupsOpen !== false : true);
+      })
+      .catch(() => {
+        if (!cancelled) setSignupsOpen(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Cloudflare Turnstile — only shown if the site key is configured; otherwise the page is exactly as before.
   useEffect(() => {
@@ -98,6 +115,23 @@ export default function RegisterSchoolPage() {
 
   const input = "w-full rounded-lg border border-black/10 dark:border-white/15 dark:bg-white/5 dark:text-white px-3.5 py-2.5 text-[13.5px] outline-none focus:border-crimson-500";
   const label = "mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60";
+
+  if (signupsOpen === false && !done) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream-100 dark:bg-[#101114] px-4 font-sans">
+        <div className="w-full max-w-sm rounded-lg bg-white dark:bg-[#1A1C20] p-7 text-center shadow-card-hover sm:p-8">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-crimson-50 text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500">
+            <AlertCircle size={20} />
+          </div>
+          <h1 className="font-display text-[16px] font-semibold text-ink dark:text-white">Sign-ups are paused</h1>
+          <p className="mt-2 text-[13px] leading-relaxed text-ink/60 dark:text-white/60">We aren't accepting new schools right now. Please check back soon.</p>
+          <Link href="/login" className="mt-4 block text-[12.5px] text-ink/50 hover:text-crimson-600 dark:text-white/50">
+            Back to sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (done) {
     return (

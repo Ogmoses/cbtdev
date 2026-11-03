@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/owner/requireOwner";
 import { deleteSchoolCompletely } from "@/lib/owner/deleteSchool";
+import { logAudit } from "@/lib/owner/audit";
 
 const STALE_DAYS = 7;
 
@@ -39,11 +40,16 @@ export async function POST() {
   const stale = await findStale(admin);
   let removed = 0;
   for (const s of stale) {
+    const base = { actorId: guard.userId, actorEmail: guard.email, targetType: "school", targetId: s.id, schoolId: s.id, schoolName: s.name };
+    // Record the intent first; if that can't be written, leave this one alone.
+    if (!(await logAudit(admin, { ...base, action: "school.purge_stale_started", details: { code: s.code } }))) continue;
     try {
       await deleteSchoolCompletely(admin, s.id, s.code);
       removed += 1;
-    } catch {
+      await logAudit(admin, { ...base, action: "school.purge_stale_completed", details: { code: s.code } });
+    } catch (err) {
       // skip this one; the rest still go
+      await logAudit(admin, { ...base, action: "school.purge_stale_failed", details: { code: s.code, error: err instanceof Error ? err.message : "error" } });
     }
   }
   return NextResponse.json({ ok: true, removed, found: stale.length });

@@ -18,6 +18,8 @@ import {
   X,
   Waves,
   Building2,
+  Power,
+  ShieldAlert,
 } from "lucide-react";
 
 export type Role = "platform_owner" | "super_admin" | "teacher" | "student";
@@ -31,6 +33,9 @@ interface NavItem {
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   platform_owner: [
     { label: "Schools", href: "/owner", icon: Building2 },
+    { label: "Controls", href: "/owner/controls", icon: Power },
+    { label: "Security", href: "/owner/security", icon: ShieldAlert },
+    { label: "Audit Logs", href: "/owner/audit-logs", icon: FileText },
     { label: "Settings", href: "/owner/settings", icon: Settings },
   ],
   super_admin: [
