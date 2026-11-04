@@ -43,6 +43,28 @@ function getTransporter(): nodemailer.Transporter {
   return cachedTransporter;
 }
 
+/** A readable plain-text version of an HTML email (links kept as "label: url"). */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<(style|script)[\s\S]*?<\/\1>/gi, "")
+    .replace(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, label: string) => {
+      const text = label.replace(/<[^>]+>/g, "").trim();
+      return text && text !== href ? `${text}: ${href}` : href;
+    })
+    .replace(/<\/(p|div|h[1-6]|tr|li)>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export async function sendMail(opts: { to: string; subject: string; html: string; fromName?: string }) {
   const fromEmail = process.env.SMTP_FROM_EMAIL;
   if (!fromEmail) {
@@ -56,5 +78,7 @@ export async function sendMail(opts: { to: string; subject: string; html: string
     to: opts.to,
     subject: opts.subject,
     html: opts.html,
+    // Mail with only an HTML part looks more like spam to inbox filters than mail that also has plain text.
+    text: htmlToText(opts.html),
   });
 }

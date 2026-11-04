@@ -39,6 +39,7 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
   const [showSecret, setShowSecret] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forgot, setForgot] = useState(false); // showing "reset my password" instead of the sign-in form
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -94,6 +95,7 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
               onClick={() => {
                 setMode(m);
                 setError(null);
+                setForgot(false);
               }}
               className={`rounded-md py-2 text-[12.5px] font-semibold capitalize transition-colors duration-200 ${
                 mode === m ? "bg-white dark:bg-[#1A1C20] text-crimson-700 dark:text-crimson-500 shadow-card" : "text-ink/50 dark:text-white/50"
@@ -104,6 +106,10 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
           ))}
         </div>
 
+        {mode === "staff" && forgot ? (
+          <ForgotPasswordPanel initialEmail={email} onBack={() => setForgot(false)} />
+        ) : (
+        <>
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {mode === "student" ? (
             <>
@@ -125,6 +131,18 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
                   </button>
                 }
               />
+              <div className="-mt-1 text-right">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setForgot(true);
+                  }}
+                  className="text-[12px] font-medium text-crimson-600 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
             </>
           )}
 
@@ -144,6 +162,8 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
+        </>
+        )}
 
         {mode === "student" && (
           <p className="mt-4 text-center text-[11.5px] text-ink/45 dark:text-white/45">
@@ -160,6 +180,71 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
         )}
       </motion.div>
     </div>
+  );
+}
+
+/** "Forgot password?" for teachers and school admins: asks for an email, sends a reset link. */
+function ForgotPasswordPanel({ initialEmail, onBack }: { initialEmail: string; onBack: () => void }) {
+  const [email, setEmail] = useState(initialEmail);
+  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!email.trim()) {
+      setError("Enter the email you sign in with.");
+      return;
+    }
+    setState("sending");
+    try {
+      const res = await fetch("/api/auth/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: email.trim() }) });
+      if (!res.ok) throw new Error();
+      setState("sent");
+    } catch {
+      setError("Couldn't send the request. Check your connection and try again.");
+      setState("idle");
+    }
+  };
+
+  if (state === "sent") {
+    return (
+      <div className="space-y-4 text-center">
+        <p className="text-[13px] leading-relaxed text-ink/70 dark:text-white/70">
+          If a teacher or admin account uses <strong className="break-all">{email.trim()}</strong>, a link to choose a new password is on its way. It works for 2 hours.
+        </p>
+        <p className="text-[12px] leading-relaxed text-ink/50 dark:text-white/50">Not there after a few minutes? Check your spam or junk folder.</p>
+        <button type="button" onClick={onBack} className="text-[12.5px] font-medium text-crimson-600 hover:underline">
+          Back to sign in
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-3.5">
+      <p className="text-[12.5px] leading-relaxed text-ink/60 dark:text-white/60">Enter the email you sign in with and we'll send you a link to choose a new password.</p>
+      <Field label="Email" value={email} onChange={setEmail} placeholder="you@school.edu" type="email" autoFocus />
+      {error && (
+        <div className="flex items-start gap-2 rounded-md bg-crimson-50 dark:bg-crimson-600/15 px-3 py-2.5 text-[12.5px] text-crimson-700 dark:text-crimson-500">
+          <AlertCircle size={14} className="mt-0.5 shrink-0" />
+          {error}
+        </div>
+      )}
+      <button
+        type="submit"
+        disabled={state === "sending"}
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-crimson-600 py-3 text-[13.5px] font-semibold text-on-crimson transition-colors duration-200 hover:bg-crimson-700 disabled:opacity-70"
+      >
+        {state === "sending" && <Loader2 size={15} className="animate-spin" />}
+        {state === "sending" ? "Sending…" : "Send reset link"}
+      </button>
+      <div className="text-center">
+        <button type="button" onClick={onBack} className="text-[12.5px] text-ink/50 hover:text-crimson-600 dark:text-white/50">
+          Back to sign in
+        </button>
+      </div>
+    </form>
   );
 }
 

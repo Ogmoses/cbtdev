@@ -18,7 +18,7 @@ school #1 on the platform.
 ### Who uses it, and where they go
 | Role | Sees | Lives at |
 |---|---|---|
-| `platform_owner` | every school's status and counts (never their data); adds, approves, suspends and deletes schools; owner settings | `/owner`, `/owner/settings` |
+| `platform_owner` | the **Command Center**: live overview + Exam Radar, every school's status and counts (never their data); adds, approves, suspends and deletes schools; broadcasts; support inbox; maintenance / sign-up switches; rate-limit security view; audit log; owner settings | `/owner`, `/owner/broadcasts`, `/owner/support`, `/owner/controls`, `/owner/security`, `/owner/audit-logs`, `/owner/settings` |
 | `super_admin` | **one** school's admin: people, academics, batches, results, settings | `/admin/...` |
 | `teacher` | their own questions, exams, grading, analytics | `/teacher/...` |
 | `student` | their exams, results, review | `/student/...` |
@@ -73,7 +73,14 @@ Vercel has its own copy, so deployments are unaffected.
 | 019 | `resolve_student_login()` — exact student-ID match (no wildcards) |
 | 020 | `revoke_school_sessions()` — signs a school's people out when it is suspended |
 | 021 | security hardening from the Supabase advisor: backup table closed to the public, trigger/internal functions no longer callable over the API, fixed `search_path`s |
-Tests: `database/tests/multi_tenant_isolation_test.sql` (33 checks, rolls itself back).
+| 022 | `audit_logs` — append-only, hash-chained record of owner-level actions; `log_audit()` / `verify_audit_chain()` (server only) |
+| 023 | `platform_flags` — one row: maintenance mode + message, school sign-ups open/paused (changed only through the owner API) |
+| 024 | broadcasts: `announcements`, `announcement_schools`, `announcement_dismissals` (staff see only live ones aimed at their role + school; students never) |
+| 025 | support desk: `support_tickets`, `support_ticket_attachments`, private `support-attachments` bucket |
+| 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
+| 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
+| 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+Tests (both roll themselves back; safe on the live database): `database/tests/multi_tenant_isolation_test.sql` (33 checks) and `database/tests/command_center_isolation_test.sql` (42 checks: audit log, flags, broadcasts, support, telemetry access).
 
 ### How a change gets to production
 Unzip the update over the repo (`unzip -o <zip>`), `npm run build`, `git add -A`,
@@ -83,13 +90,14 @@ never while an exam is running if it touches exam tables. Delete each zip after 
 (`rm -f *.zip`) — Codespaces storage is metered and the free allowance is small.
 
 ### Known limitations / still open
-- **No self-service "forgot password"** for staff: a reset can only be started by an admin's
-  "resend access". A school admin who forgets their password has no way back in (the owner
-  cannot send one either). Highest-priority next build.
+- ~~No self-service "forgot password"~~ — **done for teachers and school admins** (Pass 12): "Forgot password?"
+  on the staff login. **The platform owner has no self-service reset by design** (the reset tokens need a
+  school, and the owner account is the most powerful one): to recover it, use Supabase dashboard →
+  Authentication → Users → the owner → send/set a new password.
 - **No backup / recovery plan confirmed.** Deleting a student or a whole school is permanent
   (cascades). Check the Supabase plan for daily backups / point-in-time recovery; consider an
   owner "export school data" before delete.
-- **No audit log** of sensitive owner actions (approve, suspend, delete, add).
+- ~~No audit log~~ — done (Pass 12, `/owner/audit-logs`). Billing is not part of the platform yet, so nothing bills or logs billing.
 - Students' passwords are derived from full name + student ID (by design, no PIN): anyone who
   knows both can sign in as that student. A per-student PIN would close it.
 - Leaked Password Protection (Supabase Auth setting) is off — a manual dashboard switch
@@ -99,9 +107,17 @@ never while an exam is running if it touches exam tables. Delete each zip after 
   keys' child columns have no covering index; several tables have multiple permissive policies.
 - Untested in a real browser by the author: the photo editor's touch gestures, the bell,
   auto sign-out on suspend. No automated tests for app code (only the database isolation tests).
-- No custom domain yet: the site runs on `*.vercel.app`; emails come from a
-  Gmail/verified single sender, so some may land in spam until a real domain is added.
-- The bell is an **action list** computed live (no history, no read/unread, no push).
+- No custom domain yet: the site runs on `*.vercel.app`, and emails are sent from a free-provider
+  address verified as a single sender in Brevo. Brevo's own guidance is that mail from a free address
+  (gmail etc.) is more likely to be filtered to spam, and it substitutes its own sending address for
+  those senders — so **some emails (invites, resets, support replies) will land in spam** until an
+  owned domain is authenticated. Mitigations already in place: every email now carries a plain-text
+  version, and the forgot-password screen tells people to check spam. **When a domain exists**, the
+  real fix is: (1) buy/attach it (Vercel → project `cbtdev` → Domains); (2) in Brevo → Senders,
+  Domains → add the domain, copy the records it shows (Brevo code, DKIM, DMARC) into the domain's DNS
+  (Vercel DNS if the nameservers are on Vercel); (3) set `SMTP_FROM_EMAIL` to an address on that domain
+  in Vercel and redeploy; (4) in Supabase → Authentication → URL configuration, set the new Site URL.
+- The bell is an **action list** computed live (no history, no push; the only read/unread state is for support-ticket updates).
 - Question/diagram cropping is aspect-preset + pan/zoom, not free-form corner handles.
 - Leaked Password Protection (Supabase dashboard) is a manual switch.
 - Report cards use built-in Helvetica (Latin-1 only; names with ẹ/ọ/ṣ may not print).
@@ -658,3 +674,50 @@ section for what's genuinely tested vs. best-effort.
   no policies on purpose (service role only); `get_school_branding` is public for login pages; the
   remaining signed-in-callable functions are the RLS helpers, `get_user_school_id`, and the owner-only
   `platform_school_stats`.
+
+## Pass 12: Owner Command Center, support desk, staff password reset (migrations 022–028)
+
+**What was built** (all owner-facing pages are under `/owner`; every owner-level change is written to the audit log
+*first* — if the record can't be written, the action is not performed):
+- **Live overview + Exam Radar** (`/owner`, `components/owner/OwnerTelemetry.tsx`, `/api/owner/telemetry`, migration 026):
+  active schools, total students, live exams now (+ students writing), submitted today; the exams running right now;
+  a privacy-safe feed (school + role only — never a student's name or id). Polls every 10 s while the tab is visible.
+  Definitions: *total students* = active student accounts in active schools; *live exam* = published exam inside a
+  scheduled batch window, or with a student actively writing; *writing* = session still `active` with a heartbeat in
+  the last 30 min; *today* = the owner's local midnight. Sign-ins are recorded by `POST /api/auth/track-login`
+  (called by the login screen; one entry per person per 10 min; stores school + role only).
+- **Broadcasts** (`/owner/broadcasts`, migration 024): title, message, importance, audience (admins & teachers /
+  admins / teachers), all schools or chosen schools, optional schedule and end time; dismissible banners in
+  `components/layout/AnnouncementBanner.tsx` (up to 3, most urgent first, dismissal remembered per person).
+- **Support desk** (`/owner/support`, `/admin/support`, `/teacher/support`, migrations 025 + 027): one-way tickets
+  (subject, category, priority, message, up to 3 screenshots, shrunk in the browser; stored privately). The owner
+  writes one reply + a status (open / in progress / resolved); the school is emailed (sender, header and footer use
+  the **school's name**; a teacher's ticket also emails that school's admins). A teacher sees only their tickets; an
+  admin sees the whole school's. **Alerts**: the owner's bell + sidebar badge stay on while a ticket is open or in
+  progress; admins/teachers are alerted when the owner moves their ticket to in progress / resolved or replies, until
+  they open Help & Support (`lib/supportAttention.ts`, `/api/support/attention`, `/api/support/seen`).
+- **Emergency controls** (`/owner/controls`, migration 023): **maintenance mode** (everyone except the owner sees
+  `/maintenance`; APIs answer 503; students already in an exam keep access to the exam page + exam APIs for as long as
+  their session is active with a heartbeat in the last hour; fails open if the flag can't be read) and **school
+  sign-ups** (page shows "paused" and `/api/schools/register` refuses). Switch changes reach every server instance
+  within ~5 s. *Caveat*: maintenance blocks the app's pages and API routes — requests the browser sends straight to
+  Supabase are not blocked (that is what keeps a mid-exam student's page working).
+- **Security** (`/owner/security`): the `rate_limits` counters with a Blocked label and a Clear action. The allowances
+  shown are **copied** into `app/api/owner/security/rate-limits/route.ts` (`RULES`) — if you change a limit in the
+  routes that enforce it, change it there too.
+- **Audit log** (`/owner/audit-logs`, migration 022): append-only (triggers refuse UPDATE/DELETE/TRUNCATE for
+  everyone), hash-chained, with a "Verify integrity" button. Logged: school create/approve/suspend/reactivate/delete
+  (a delete records *started* before anything is erased, then *completed/failed*), stale sign-up clean-ups, maintenance
+  and sign-up switches, broadcasts, support replies/status changes, rate-limit clears.
+- **Staff "Forgot password?"** (migration 028; `/api/auth/forgot-password`, `components/auth/LoginForm.tsx`): teachers and
+  school admins of an active school get the existing 2-hour, single-use reset link by email. The answer is identical
+  (and instant) whether or not the email exists; limits are 8/h per connection and 3/h per email; completing a reset
+  signs the person out everywhere. Students have no email (name + ID); the owner recovers via the Supabase dashboard.
+- **Email**: `lib/mailer.ts` now sends a plain-text version of every message (HTML-only mail is judged more harshly by
+  spam filters). Emails other than support replies and password resets still use the platform sender name; the
+  school-name sender is a one-line `fromName` change per route if wanted.
+
+**Delivery workflow**: each update zip is cumulative (everything changed so far), `unzip -o <zip>` over the repo,
+`npm run build`, commit, push. Migrations were applied to the live project by the assistant after a rolled-back dry run
+and the owner's go-ahead.
+

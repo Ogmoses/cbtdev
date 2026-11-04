@@ -28,5 +28,12 @@ export async function POST(req: NextRequest) {
   const { error } = await admin.auth.admin.updateUserById(result.userId, { password });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // A reset should also end any sign-in that already exists on this account (migration 028).
+  // Best effort: the password is already changed, so a hiccup here must not turn the reset into an error.
+  await admin.rpc("revoke_user_sessions", { p_user_id: result.userId }).then(
+    () => undefined,
+    () => undefined
+  );
+
   return NextResponse.json({ ok: true, email: result.email });
 }
