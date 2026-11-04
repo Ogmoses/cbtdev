@@ -47,6 +47,8 @@ const LABELS: Record<string, string> = {
   "support.status_changed": "Support ticket status changed",
   "broadcast.create": "Broadcast sent",
   "broadcast.create_failed": "Broadcast failed to send",
+  "broadcast.edit": "Broadcast edited",
+  "broadcast.edit_failed": "Broadcast edit failed",
   "broadcast.end": "Broadcast ended",
   "flags.maintenance_on": "Maintenance mode turned ON",
   "flags.maintenance_off": "Maintenance mode turned off",

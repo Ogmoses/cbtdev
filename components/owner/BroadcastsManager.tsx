@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Check, Info, Loader2, Megaphone } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangle, Check, Copy, Info, Loader2, Megaphone, Pencil } from "lucide-react";
 
 type Severity = "info" | "warning" | "critical";
 type Audience = "all_staff" | "admins" | "teachers";
@@ -19,6 +19,7 @@ interface Broadcast {
   audience: Audience;
   allSchools: boolean;
   schoolNames: string[];
+  schoolIds: string[];
   startsAt: string;
   endsAt: string | null;
   status: "scheduled" | "live" | "ended";
@@ -36,6 +37,14 @@ const PREVIEW: Record<Severity, string> = {
 const field =
   "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-[13.5px] text-ink outline-none focus:border-crimson-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
 
+/** An ISO time as the "YYYY-MM-DDTHH:mm" text a datetime-local box wants, in the owner's own time zone. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function BroadcastsManager() {
   const [items, setItems] = useState<Broadcast[] | null>(null);
   const [schools, setSchools] = useState<School[]>([]);
@@ -43,6 +52,7 @@ export default function BroadcastsManager() {
   const [notice, setNotice] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [endingId, setEndingId] = useState<string | null>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -53,6 +63,12 @@ export default function BroadcastsManager() {
   const [startLater, setStartLater] = useState(false);
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
+
+  // What the composer is doing: sending a new one, editing one (editingId), or sending a copy of an old one (reusedFrom).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingStarted, setEditingStarted] = useState(false); // already live: its start time can't change
+  const [reshow, setReshow] = useState(false);
+  const [reusedFrom, setReusedFrom] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -73,37 +89,86 @@ export default function BroadcastsManager() {
 
   const togglePicked = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
+  const clearComposer = () => {
+    setTitle("");
+    setBody("");
+    setSeverity("info");
+    setAudience("all_staff");
+    setAllSchools(true);
+    setPicked([]);
+    setStartLater(false);
+    setStartsAt("");
+    setEndsAt("");
+    setEditingId(null);
+    setEditingStarted(false);
+    setReshow(false);
+    setReusedFrom(null);
+  };
+
+  const fill = (b: Broadcast) => {
+    setTitle(b.title);
+    setBody(b.body);
+    setSeverity(b.severity);
+    setAudience(b.audience);
+    setAllSchools(b.allSchools);
+    setPicked(b.allSchools ? [] : b.schoolIds.filter((id) => schools.some((s) => s.id === id)));
+  };
+
+  const scrollToComposer = () => setTimeout(() => composerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+
+  const startEdit = (b: Broadcast) => {
+    clearComposer();
+    fill(b);
+    setEditingId(b.id);
+    const started = new Date(b.startsAt).getTime() <= Date.now();
+    setEditingStarted(started);
+    setStartLater(!started);
+    setStartsAt(started ? "" : toLocalInput(b.startsAt));
+    setEndsAt(toLocalInput(b.endsAt));
+    setError(null);
+    setNotice(null);
+    scrollToComposer();
+  };
+
+  const startReuse = (b: Broadcast) => {
+    clearComposer();
+    fill(b); // the schedule is NOT copied: a reused broadcast starts fresh (now, no end) unless you set one
+    setReusedFrom(b.id);
+    setError(null);
+    setNotice(null);
+    scrollToComposer();
+  };
+
   const send = async () => {
     setSending(true);
     setError(null);
     setNotice(null);
     try {
-      const res = await fetch("/api/owner/broadcasts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          body,
-          severity,
-          audience,
-          allSchools,
-          schoolIds: allSchools ? [] : picked,
-          startsAt: startLater && startsAt ? new Date(startsAt).toISOString() : undefined,
-          endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
-        }),
-      });
+      const payload = {
+        title,
+        body,
+        severity,
+        audience,
+        allSchools,
+        schoolIds: allSchools ? [] : picked,
+        startsAt: (!editingStarted && startLater && startsAt) ? new Date(startsAt).toISOString() : undefined,
+        endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
+      };
+      const res = editingId
+        ? await fetch("/api/owner/broadcasts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, id: editingId, action: "edit", reshow }) })
+        : await fetch("/api/owner/broadcasts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, reusedFrom: reusedFrom ?? undefined }) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Couldn't send the broadcast.");
-      setNotice(startLater && startsAt ? "Broadcast scheduled." : "Broadcast sent. It will appear within a minute.");
-      setTitle("");
-      setBody("");
-      setSeverity("info");
-      setAudience("all_staff");
-      setAllSchools(true);
-      setPicked([]);
-      setStartLater(false);
-      setStartsAt("");
-      setEndsAt("");
+      setNotice(
+        editingId
+          ? json.changed === false
+            ? "Nothing was different, so nothing changed."
+            : "Changes saved. They appear for staff within a minute."
+          : startLater && startsAt
+            ? "Broadcast scheduled."
+            : "Broadcast sent. It will appear within a minute."
+      );
+      clearComposer();
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't send the broadcast.");
@@ -120,6 +185,7 @@ export default function BroadcastsManager() {
       const res = await fetch("/api/owner/broadcasts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "end" }) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Couldn't end the broadcast.");
+      if (editingId === id) clearComposer();
       setNotice("Broadcast ended.");
       await load();
     } catch (err) {
@@ -129,9 +195,10 @@ export default function BroadcastsManager() {
     }
   };
 
-  const canSend = title.trim() && body.trim() && (allSchools || picked.length > 0) && (!startLater || startsAt) && !sending;
+  const canSend = title.trim() && body.trim() && (allSchools || picked.length > 0) && (editingStarted || !startLater || startsAt) && !sending;
   const card = "rounded-lg bg-white p-4 shadow-card dark:bg-[#1A1C20]";
   const label = "mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60";
+  const smallBtn = "flex items-center justify-center gap-1.5 rounded-md bg-background-muted px-3 py-1.5 text-[12px] font-medium text-ink/70 hover:text-crimson-600 disabled:opacity-60 dark:bg-white/5 dark:text-white/70";
 
   return (
     <div className="space-y-5">
@@ -146,10 +213,20 @@ export default function BroadcastsManager() {
       )}
       {error && <p className="rounded-md bg-crimson-50 px-3 py-2 text-[12.5px] text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500">{error}</p>}
 
-      <div className={card}>
-        <p className="mb-3 flex items-center gap-2 font-display text-[14.5px] font-semibold text-ink dark:text-white">
-          <Megaphone size={16} /> New broadcast
-        </p>
+      <div ref={composerRef} className={card}>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="flex items-center gap-2 font-display text-[14.5px] font-semibold text-ink dark:text-white">
+            {editingId ? <Pencil size={16} /> : reusedFrom ? <Copy size={16} /> : <Megaphone size={16} />}
+            {editingId ? "Edit broadcast" : reusedFrom ? "Send again (copy of an earlier broadcast)" : "New broadcast"}
+          </p>
+          {(editingId || reusedFrom) && (
+            <button type="button" onClick={clearComposer} className="text-[12px] font-medium text-ink/50 hover:text-crimson-600 dark:text-white/50">
+              {editingId ? "Cancel editing" : "Start blank"}
+            </button>
+          )}
+        </div>
+
+        {reusedFrom && <p className="mb-3 rounded-md bg-background-muted p-2.5 text-[12px] text-ink/65 dark:bg-white/5 dark:text-white/65">Loaded from an earlier broadcast. Change anything you like, then send. It starts now unless you schedule it.</p>}
 
         <div className="space-y-3.5">
           <div>
@@ -215,16 +292,29 @@ export default function BroadcastsManager() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 flex items-center gap-2 text-[12px] font-medium text-ink/60 dark:text-white/60">
-                <input type="checkbox" checked={startLater} onChange={(e) => setStartLater(e.target.checked)} /> Schedule for later
-              </label>
-              <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} disabled={!startLater} className={`${field} disabled:opacity-40`} aria-label="Start time" />
+              {editingStarted ? (
+                <p className="rounded-md bg-background-muted p-2.5 text-[12px] text-ink/60 dark:bg-white/5 dark:text-white/60">This broadcast is already live, so its start time can't change.</p>
+              ) : (
+                <>
+                  <label className="mb-1 flex items-center gap-2 text-[12px] font-medium text-ink/60 dark:text-white/60">
+                    <input type="checkbox" checked={startLater} onChange={(e) => setStartLater(e.target.checked)} /> Schedule for later
+                  </label>
+                  <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} disabled={!startLater} className={`${field} disabled:opacity-40`} aria-label="Start time" />
+                </>
+              )}
             </div>
             <div>
               <label className={label} htmlFor="bc-end">Stop showing automatically (optional)</label>
               <input id="bc-end" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} className={field} />
             </div>
           </div>
+
+          {editingId && (
+            <label className="flex items-start gap-2 rounded-md bg-background-muted p-2.5 text-[12.5px] text-ink/70 dark:bg-white/5 dark:text-white/70">
+              <input type="checkbox" checked={reshow} onChange={(e) => setReshow(e.target.checked)} className="mt-0.5" />
+              <span>Show again to people who already closed it (use this for an important change, not a typo fix)</span>
+            </label>
+          )}
 
           {(title.trim() || body.trim()) && (
             <div>
@@ -245,7 +335,7 @@ export default function BroadcastsManager() {
             disabled={!canSend}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-crimson-600 py-2.5 text-[13.5px] font-medium text-on-crimson hover:bg-crimson-700 disabled:opacity-50"
           >
-            {sending && <Loader2 size={14} className="animate-spin" />} {startLater ? "Schedule broadcast" : "Send broadcast"}
+            {sending && <Loader2 size={14} className="animate-spin" />} {editingId ? "Save changes" : startLater && !editingStarted ? "Schedule broadcast" : "Send broadcast"}
           </button>
         </div>
       </div>
@@ -261,7 +351,7 @@ export default function BroadcastsManager() {
         ) : (
           <div className="space-y-2">
             {items.map((b) => (
-              <div key={b.id} className={card}>
+              <div key={b.id} className={`${card} ${editingId === b.id ? "ring-2 ring-crimson-500" : ""}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -281,16 +371,21 @@ export default function BroadcastsManager() {
                       {b.endsAt ? ` · until ${new Date(b.endsAt).toLocaleString()}` : ""} · closed by {b.dismissed}
                     </p>
                   </div>
-                  {b.status !== "ended" && (
-                    <button
-                      type="button"
-                      disabled={endingId === b.id}
-                      onClick={() => end(b.id)}
-                      className="shrink-0 rounded-md bg-background-muted px-3 py-1.5 text-[12px] font-medium text-ink/70 hover:text-crimson-600 disabled:opacity-60 dark:bg-white/5 dark:text-white/70"
-                    >
-                      {endingId === b.id ? "Ending…" : b.status === "scheduled" ? "Cancel" : "End now"}
+                  <div className="flex shrink-0 flex-col gap-1.5">
+                    {b.status !== "ended" && (
+                      <button type="button" onClick={() => startEdit(b)} className={smallBtn}>
+                        <Pencil size={12} /> Edit
+                      </button>
+                    )}
+                    <button type="button" onClick={() => startReuse(b)} className={smallBtn}>
+                      <Copy size={12} /> Reuse
                     </button>
-                  )}
+                    {b.status !== "ended" && (
+                      <button type="button" disabled={endingId === b.id} onClick={() => end(b.id)} className={smallBtn}>
+                        {endingId === b.id ? "Ending…" : b.status === "scheduled" ? "Cancel" : "End now"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

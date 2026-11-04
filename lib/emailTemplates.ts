@@ -65,11 +65,19 @@ export function inviteEmailHtml(opts: { schoolName: string; fullName: string; li
   return shell(opts.schoolName, body);
 }
 
-export function resetEmailHtml(opts: { schoolName: string; fullName: string; link: string; expiresInHours: number }): string {
+/**
+ * `requestedBy`: "admin" (default) when a school admin sent the reset from the People page,
+ * "self" when the person used "Forgot password?" on the login screen themselves.
+ */
+export function resetEmailHtml(opts: { schoolName: string; fullName: string; link: string; expiresInHours: number; requestedBy?: "admin" | "self" }): string {
+  const intro =
+    opts.requestedBy === "self"
+      ? `We received a request to reset the password for your account at ${escapeHtml(opts.schoolName)}. Set a new password here:`
+      : `Your admin at ${escapeHtml(opts.schoolName)} requested a password reset for your account. Set a new password here:`;
   const body = `
     <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">Reset your password</h1>
     <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Hi ${escapeHtml(opts.fullName)},</p>
-    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Your admin at ${escapeHtml(opts.schoolName)} requested a password reset for your account. Set a new password here:</p>
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">${intro}</p>
     ${button("Reset your password", opts.link)}
     <p style="margin:16px 0 0;color:#1A1A1A80;font-size:12px;line-height:1.6;">This link expires in ${opts.expiresInHours} hours. Didn't request this? You can ignore it — your password won't change unless this link is used.</p>
     <p style="margin:8px 0 0;color:#1A1A1A80;font-size:11px;line-height:1.6;word-break:break-all;">Or paste this into your browser: ${opts.link}</p>

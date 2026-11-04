@@ -80,6 +80,7 @@ Vercel has its own copy, so deployments are unaffected.
 | 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
 | 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
 | 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+| 029 | `edit_announcement()` — edits a live/scheduled broadcast (content, audience, schools, schedule, optional "show again") in one all-or-nothing step |
 Tests (both roll themselves back; safe on the live database): `database/tests/multi_tenant_isolation_test.sql` (33 checks) and `database/tests/command_center_isolation_test.sql` (42 checks: audit log, flags, broadcasts, support, telemetry access).
 
 ### How a change gets to production
@@ -687,7 +688,9 @@ section for what's genuinely tested vs. best-effort.
   the last 30 min; *today* = the owner's local midnight. Sign-ins are recorded by `POST /api/auth/track-login`
   (called by the login screen; one entry per person per 10 min; stores school + role only).
 - **Broadcasts** (`/owner/broadcasts`, migration 024): title, message, importance, audience (admins & teachers /
-  admins / teachers), all schools or chosen schools, optional schedule and end time; dismissible banners in
+  admins / teachers), all schools or chosen schools, optional schedule and end time. **Edit** (live or scheduled ones; a live
+  broadcast keeps its start time; tick "show again" to re-show it to people who already closed it) and **Reuse** (loads an
+  old broadcast — ended or not — into the composer as a fresh one that starts now) are on each card; dismissible banners in
   `components/layout/AnnouncementBanner.tsx` (up to 3, most urgent first, dismissal remembered per person).
 - **Support desk** (`/owner/support`, `/admin/support`, `/teacher/support`, migrations 025 + 027): one-way tickets
   (subject, category, priority, message, up to 3 screenshots, shrunk in the browser; stored privately). The owner
@@ -712,7 +715,9 @@ section for what's genuinely tested vs. best-effort.
 - **Staff "Forgot password?"** (migration 028; `/api/auth/forgot-password`, `components/auth/LoginForm.tsx`): teachers and
   school admins of an active school get the existing 2-hour, single-use reset link by email. The answer is identical
   (and instant) whether or not the email exists; limits are 8/h per connection and 3/h per email; completing a reset
-  signs the person out everywhere. Students have no email (name + ID); the owner recovers via the Supabase dashboard.
+  signs the person out everywhere. The email says "We received a request to reset the password for your account" when
+  the person asked themselves, and "Your admin … requested a password reset" only when an admin sent it from People
+  (`requestedBy` in `resetEmailHtml`). Students have no email (name + ID); the owner recovers via the Supabase dashboard.
 - **Email**: `lib/mailer.ts` now sends a plain-text version of every message (HTML-only mail is judged more harshly by
   spam filters). Emails other than support replies and password resets still use the platform sender name; the
   school-name sender is a one-line `fromName` change per route if wanted.

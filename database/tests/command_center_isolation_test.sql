@@ -55,6 +55,7 @@ begin
      or has_function_privilege('authenticated', 'verify_audit_chain()', 'execute')
      or has_function_privilege('authenticated', 'platform_telemetry(timestamptz,int)', 'execute')
      or has_function_privilege('authenticated', 'record_login_event(uuid,text)', 'execute')
+     or has_function_privilege('authenticated', 'edit_announcement(uuid,text,text,text,text,boolean,uuid[],timestamptz,timestamptz,boolean)', 'execute')
      or has_function_privilege('authenticated', 'revoke_user_sessions(uuid)', 'execute') then
     fails := fails || 'a server-only function is callable from the browser; ';
   end if;

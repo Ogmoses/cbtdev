@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
           fullName: user.full_name as string,
           link: `${origin}/reset-password?token=${token}&school=${school.code}`,
           expiresInHours,
+          requestedBy: "self",
         }),
       });
     } catch (err) {
