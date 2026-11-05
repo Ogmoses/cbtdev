@@ -13,12 +13,10 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { ReportCardData } from "./types";
 
-// Uses react-pdf's built-in Helvetica: no font files to host, nothing to
-// register, so PDF generation can't fail on a missing font. fontWeight 600/700
-// below both resolve to Helvetica-Bold. Note: built-in fonts only cover
-// Latin-1 characters, so letters outside it (e.g. Yoruba "ẹ", "ọ", "ṣ") may
-// not draw correctly — if that matters, register a real .ttf that contains
-// them (Font.register needs a path the *server* can read, not a /public URL).
+// Font: the server route registers Liberation Sans (lib/reportFonts.ts) and passes its family name
+// in as `fontFamily`, so Yoruba/Igbo/Hausa letters (ẹ ọ ṣ ị ụ ɓ ɗ ƙ and tone marks) print. If no family
+// is passed (e.g. a browser-side preview) it uses react-pdf's built-in Helvetica, which only covers
+// Latin-1. fontWeight 600/700 below both resolve to the bold face.
 const CRIMSON = "#AB1509";
 const CREAM = "#fff7d3";
 const INK = "#1A1A1A";
@@ -73,10 +71,10 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", bottom: 20, left: 36, right: 36, textAlign: "center", fontSize: 7, color: MUTED },
 });
 
-export default function ReportCardDocument({ data }: { data: ReportCardData }) {
+export default function ReportCardDocument({ data, fontFamily = "Helvetica" }: { data: ReportCardData; fontFamily?: string }) {
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, { fontFamily }]}>
         {/* Letterhead */}
         <View style={styles.header}>
           {data.logoUrl && <Image src={data.logoUrl} style={styles.logo} />}

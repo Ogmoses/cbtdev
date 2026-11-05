@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const BUCKETS = ["question-images", "school-assets", "support-attachments"] as const;
 
 /** Every file path under `prefix` in a bucket (storage lists one level at a time; folders have no id). */
-async function listAllFiles(admin: SupabaseClient, bucket: string, prefix: string): Promise<string[]> {
+export async function listAllFiles(admin: SupabaseClient, bucket: string, prefix: string): Promise<string[]> {
   const files: string[] = [];
   const { data } = await admin.storage.from(bucket).list(prefix, { limit: 1000 });
   for (const item of data ?? []) {

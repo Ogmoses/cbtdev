@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, X, Link2, Check, Pause, Play, BadgeCheck, Trash2 } from "lucide-react";
+import { Plus, Loader2, X, Link2, Check, Pause, Play, BadgeCheck, Trash2, Download } from "lucide-react";
 import ConfirmTypeModal from "./ConfirmTypeModal";
+import SchoolExportModal from "./SchoolExportModal";
+import SchoolExports from "@/components/exports/SchoolExports";
 import { createClient } from "@/lib/supabase/client";
 
 type Status = "pending" | "active" | "suspended";
@@ -45,6 +47,7 @@ export default function OwnerSchools() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [toDelete, setToDelete] = useState<SchoolStats | null>(null);
+  const [exportFor, setExportFor] = useState<SchoolStats | null>(null);
   const [staleCount, setStaleCount] = useState(0);
   const [showPurge, setShowPurge] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -273,6 +276,15 @@ export default function OwnerSchools() {
                   {busyId === s.school_id ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />} Suspend
                 </button>
               )}
+              {s.status !== "pending" && (
+                <button
+                  type="button"
+                  onClick={() => setExportFor(s)}
+                  className="flex items-center gap-1.5 rounded-md bg-background-muted px-3 py-1.5 text-[12px] font-medium text-ink/70 hover:text-crimson-600 dark:bg-white/5 dark:text-white/70"
+                >
+                  <Download size={13} /> Export
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setToDelete(s)}
@@ -309,8 +321,15 @@ export default function OwnerSchools() {
             <li>the logo and every uploaded image</li>
           </ul>
           <p className="text-[12.5px]">Tip: if you only want to stop access for now, use <strong>Suspend</strong> instead.</p>
+          <div className="space-y-2 rounded-md border border-amber-300/60 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <p className="text-[12.5px] font-medium text-ink dark:text-white">Want a copy of this school's data first?</p>
+            <p className="text-[12px] text-ink/65 dark:text-white/65">Once it's deleted nothing can be recovered. You can still delete without an export.</p>
+            <SchoolExports mode="owner" schoolId={toDelete.school_id} compact />
+          </div>
         </ConfirmTypeModal>
       )}
+
+      {exportFor && <SchoolExportModal school={exportFor} onClose={() => setExportFor(null)} />}
 
       {showPurge && (
         <ConfirmTypeModal title="Clear old sign-ups?" confirmWord="remove" confirmLabel="Remove them" onConfirm={purgeStale} onClose={() => setShowPurge(false)}>

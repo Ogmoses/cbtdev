@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SettingsManager from "@/components/admin/SettingsManager";
+import SchoolDataExport from "@/components/admin/SchoolDataExport";
 import { createClient } from "@/lib/supabase/client";
 import { orThrow } from "@/lib/supabaseErrors";
 import { fetchOwnSchool } from "@/lib/schoolBranding";
@@ -87,8 +88,13 @@ export default function AdminSettingsPage() {
   return (
     <DashboardLayout role="super_admin" pageTitle="Settings" userName={authUser?.fullName ?? ""} onLogout={() => signOutAndRedirect(router)}>
       {loading ? <PageLoading /> : (
-        <SettingsManager profile={profile} gradingScale={scale} onSaveProfile={handleSaveProfile} onSaveGradingScale={handleSaveGradingScale} onSaveTheme={handleSaveTheme}
-        onSaveSurface={handleSaveSurface} />
+        <>
+          <SettingsManager profile={profile} gradingScale={scale} onSaveProfile={handleSaveProfile} onSaveGradingScale={handleSaveGradingScale} onSaveTheme={handleSaveTheme}
+          onSaveSurface={handleSaveSurface} />
+          <div className="mt-6">
+            <SchoolDataExport />
+          </div>
+        </>
       )}
     </DashboardLayout>
   );

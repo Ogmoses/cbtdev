@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { buildReportCardData } from "@/lib/reportCard";
 import ReportCardDocument from "@/components/reports/ReportCardDocument";
+import { registerReportFonts } from "@/lib/reportFonts";
 
 /**
  * GET /api/report-cards/[studentId]/[termId]?comment=...&principal=...
@@ -30,7 +31,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ stud
 
   try {
     const data = await buildReportCardData(supabase, studentId, termId, { teacherComment, principalName });
-    const pdfBuffer = await renderToBuffer(<ReportCardDocument data={data} />);
+    // Liberation Sans (covers Yoruba / Igbo / Hausa letters); falls back to Helvetica if the font files are missing.
+    const fontFamily = registerReportFonts();
+    const pdfBuffer = await renderToBuffer(<ReportCardDocument data={data} fontFamily={fontFamily} />);
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {

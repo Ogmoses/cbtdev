@@ -14,6 +14,7 @@ const RULES: Record<string, { max: number; windowSeconds: number; label: string 
   "resend-email": { max: 3, windowSeconds: 3600, label: "Verification resends (per email)" },
   forgot: { max: 8, windowSeconds: 3600, label: "Password reset requests (per connection)" },
   "forgot-email": { max: 3, windowSeconds: 3600, label: "Password reset requests (per email)" },
+  export: { max: 3, windowSeconds: 3600, label: "School data exports (per school)" },
   support: { max: 5, windowSeconds: 3600, label: "Support tickets (per user)" },
   "lookup-miss": { max: 100, windowSeconds: 600, label: "Student ID lookups that missed (per connection)" },
 };

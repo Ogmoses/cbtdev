@@ -80,6 +80,7 @@ Vercel has its own copy, so deployments are unaffected.
 | 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
 | 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
 | 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+| 030 | `school_exports` + private `school-exports` bucket — ZIP exports of a school's data, kept 30 days, owner sees all (even of deleted schools), a school admin only their own school's |
 | 029 | `edit_announcement()` — edits a live/scheduled broadcast (content, audience, schools, schedule, optional "show again") in one all-or-nothing step |
 Tests (both roll themselves back; safe on the live database): `database/tests/multi_tenant_isolation_test.sql` (33 checks) and `database/tests/command_center_isolation_test.sql` (42 checks: audit log, flags, broadcasts, support, telemetry access).
 
@@ -96,8 +97,10 @@ never while an exam is running if it touches exam tables. Delete each zip after 
   school, and the owner account is the most powerful one): to recover it, use Supabase dashboard →
   Authentication → Users → the owner → send/set a new password.
 - **No backup / recovery plan confirmed.** Deleting a student or a whole school is permanent
-  (cascades). Check the Supabase plan for daily backups / point-in-time recovery; consider an
-  owner "export school data" before delete.
+  (cascades). Check the Supabase plan for daily backups / point-in-time recovery yourself (it is a
+  dashboard/plan setting). The **school data export** (Pass 12) now exists as a copy-out path: the owner is
+  offered one in the delete dialog (not required), and each school admin can export their own school from
+  Settings. It is a spreadsheet export, not a database backup — it can't restore a school by itself.
 - ~~No audit log~~ — done (Pass 12, `/owner/audit-logs`). Billing is not part of the platform yet, so nothing bills or logs billing.
 - Students' passwords are derived from full name + student ID (by design, no PIN): anyone who
   knows both can sign in as that student. A per-student PIN would close it.
@@ -121,7 +124,7 @@ never while an exam is running if it touches exam tables. Delete each zip after 
 - The bell is an **action list** computed live (no history, no push; the only read/unread state is for support-ticket updates).
 - Question/diagram cropping is aspect-preset + pan/zoom, not free-form corner handles.
 - Leaked Password Protection (Supabase dashboard) is a manual switch.
-- Report cards use built-in Helvetica (Latin-1 only; names with ẹ/ọ/ṣ may not print).
+- Report-card PDFs use Liberation Sans (bundled in `assets/fonts`), so Yoruba/Igbo/Hausa letters and tone marks print; see `public/fonts/README.md`.
 
 ## Built so far (the original single-school build; see "Current state" above for today's architecture)
 | Area | File |
@@ -631,8 +634,8 @@ section for what's genuinely tested vs. best-effort.
   failed as duplicates).
 
 ### Still open (Pass 8; historical)
-- ~~Report card fonts~~ — resolved: PDFs use built-in Helvetica, no files
-  needed (Latin-1 characters only; see `public/fonts/README.md`).
+- ~~Report card fonts~~ — resolved twice: first built-in Helvetica (Latin-1 only), then (Pass 12) the bundled
+  Liberation Sans so ẹ ọ ṣ ị ụ ɓ ɗ ƙ and tone marks print (`lib/reportFonts.ts`, `next.config.ts`).
 - Leaked Password Protection (Supabase dashboard) and the Vercel auto-deploy
   ticket remain manual.
 
@@ -725,4 +728,22 @@ section for what's genuinely tested vs. best-effort.
 **Delivery workflow**: each update zip is cumulative (everything changed so far), `unzip -o <zip>` over the repo,
 `npm run build`, commit, push. Migrations were applied to the live project by the assistant after a rolled-back dry run
 and the owner's go-ahead.
+- **Report-card fonts**: the PDF now uses the bundled Liberation Sans (`assets/fonts`, registered in `lib/reportFonts.ts`, shipped
+  by `outputFileTracingIncludes` in `next.config.ts`) instead of Helvetica, so names with ẹ ọ ṣ (and Igbo / Hausa letters, with
+  tone marks) print. Same letter widths as Helvetica, so the layout is unchanged; hyphenation is switched off so a break can never
+  split a letter from its accent. If the font files are missing the PDF falls back to Helvetica and logs a server error.
+- **School data export** (migration 030; `lib/schoolExport.ts`, `/api/owner/exports`, `/api/admin/exports`,
+  `/api/exports/[id]/download`, `components/exports/SchoolExports.tsx`, owner page `/owner/exports`, admin Settings section):
+  a ZIP of readable spreadsheets (`students.csv`, `staff.csv`, `results.csv`, `term_results.csv`), every table as
+  `raw/<table>.csv`, `school.csv`, the logo + question images (`files/`, capped at 30 MB total / 5 MB each, the rest listed
+  in `files/manifest.csv`) and a `README.txt`. Built in the background (`after()`, up to 60 s), saved in the private
+  `school-exports` bucket (50 MB limit) and downloaded through a 5-minute signed link. The owner can export any school
+  (button on each school card and inside the delete dialog — offered, never required); a school admin only their own.
+  Kept 30 days, then removed the next time a list is opened (there is no scheduled job); exports of a deleted school
+  stay downloadable for their 30 days. Max 3 exports per school per hour. Every export / download / removal is audit-logged
+  before it happens. **What is exported is an allow-list** (`TABLES` in `lib/schoolExport.ts`): `users.pin_hash` and
+  `student_exam_sessions.device_fingerprint` are deliberately left out, and a column added to a table later is NOT exported
+  until it is added there. Text starting with `= + - @` gets a leading `'` so a spreadsheet can't run it as a formula, and
+  each CSV starts with a UTF-8 marker so Excel shows Yoruba/Igbo/Hausa letters correctly. `lib/zip.ts` is a small
+  dependency-free ZIP writer (tested against Python's `zipfile` and `unzip`).
 

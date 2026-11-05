@@ -23,6 +23,7 @@ import {
   Megaphone,
   LifeBuoy,
   Inbox,
+  Download,
 } from "lucide-react";
 import { useSupportAttention } from "@/lib/supportAttention";
 
@@ -38,6 +39,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   platform_owner: [
     { label: "Command Center", href: "/owner", icon: Building2 },
     { label: "Support", href: "/owner/support", icon: Inbox },
+    { label: "Data Exports", href: "/owner/exports", icon: Download },
     { label: "Broadcasts", href: "/owner/broadcasts", icon: Megaphone },
     { label: "Controls", href: "/owner/controls", icon: Power },
     { label: "Security", href: "/owner/security", icon: ShieldAlert },
