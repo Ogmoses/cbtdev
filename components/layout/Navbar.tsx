@@ -83,7 +83,13 @@ export default function Navbar({
                           <button
                             onClick={() => {
                               setBellOpen(false);
-                              router.push(item.href);
+                              const [path, hash] = item.href.split("#");
+                              if (hash && path === window.location.pathname) {
+                                // already on this page: scroll to the section ourselves, once the dropdown has closed
+                                setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+                              } else {
+                                router.push(item.href);
+                              }
                             }}
                             className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-[13px] text-ink transition-colors hover:bg-background-muted dark:text-white dark:hover:bg-white/5"
                           >

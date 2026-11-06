@@ -763,4 +763,7 @@ and the owner's go-ahead.
   date when it is within 7 days (from the school's name, with the owner's contact). A new end date earns a new reminder. Owner-set contact,
   message and currency symbol live in the "Renewal contact" card; the owner's bell shows schools locked / ending within 7 days.
   Existing schools were set to Active with no end date when this shipped (so nobody was locked); new schools start as Trial.
+- **Billing follow-ups**: the owner's school cards now show **Locked** (and a **Trial** tag) next to the approval status, refreshed the moment
+  billing changes (`lib/billingEvents.ts`); the bell's school items link to `/owner#billing` / `/owner#schools` and the bell scrolls to the
+  section when you're already on that page (a plain link to the page you're on does nothing visible).
 

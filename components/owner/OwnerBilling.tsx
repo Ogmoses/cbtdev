@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronDown, Loader2, Lock, Unlock, Wallet } from "lucide-react";
+import { refreshBilling } from "@/lib/billingEvents";
 
 type Sub = "trial" | "active" | "expired";
 
@@ -146,6 +147,7 @@ export default function OwnerBilling() {
       if (!res.ok) throw new Error(json.error ?? "Couldn't save. Nothing was changed.");
       setNotice(json.changed === false ? "Nothing was different, so nothing changed." : done);
       await load();
+      refreshBilling();
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save. Nothing was changed.");
@@ -203,6 +205,7 @@ export default function OwnerBilling() {
       setNotice("Renewal contact saved.");
       setShowContact(false);
       await load();
+      refreshBilling();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save. Nothing was changed.");
     } finally {

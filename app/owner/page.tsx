@@ -19,13 +19,27 @@ export default function OwnerPage() {
     if (authUser && authUser.role !== "platform_owner") router.replace(roleHome(authUser.role));
   }, [authUser, router]);
 
+  // Arriving with #billing / #schools (from the bell on another page): the sections only exist once this page has
+  // loaded, so scroll to the one asked for after it appears.
+  const ready = !!authUser && authUser.role === "platform_owner";
+  useEffect(() => {
+    if (!ready || !window.location.hash) return;
+    const id = window.location.hash.slice(1);
+    const timer = setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 400);
+    return () => clearTimeout(timer);
+  }, [ready]);
+
   if (!authUser || authUser.role !== "platform_owner") return <PageLoading />;
 
   return (
     <DashboardLayout role="platform_owner" pageTitle="Command Center" userName={authUser.fullName} onLogout={() => signOutAndRedirect(router)}>
       <OwnerTelemetry />
-      <OwnerBilling />
-      <OwnerSchools />
+      <div id="billing" className="scroll-mt-24">
+        <OwnerBilling />
+      </div>
+      <div id="schools" className="scroll-mt-24">
+        <OwnerSchools />
+      </div>
     </DashboardLayout>
   );
 }

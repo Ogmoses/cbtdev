@@ -5,6 +5,7 @@ import { Plus, Loader2, X, Link2, Check, Pause, Play, BadgeCheck, Trash2, Downlo
 import ConfirmTypeModal from "./ConfirmTypeModal";
 import SchoolExportModal from "./SchoolExportModal";
 import SchoolExports from "@/components/exports/SchoolExports";
+import { onBillingRefresh } from "@/lib/billingEvents";
 import { createClient } from "@/lib/supabase/client";
 
 type Status = "pending" | "active" | "suspended";
@@ -48,6 +49,24 @@ export default function OwnerSchools() {
   const [showAdd, setShowAdd] = useState(false);
   const [toDelete, setToDelete] = useState<SchoolStats | null>(null);
   const [exportFor, setExportFor] = useState<SchoolStats | null>(null);
+  // each school's billing state (Active / Trial / Expired), so a locked school doesn't still look plainly "Active"
+  const [billing, setBilling] = useState<Record<string, "trial" | "active" | "expired">>({});
+  const loadBilling = useCallback(async () => {
+    try {
+      const res = await fetch("/api/owner/billing", { cache: "no-store" });
+      if (!res.ok) return;
+      const json = await res.json();
+      const map: Record<string, "trial" | "active" | "expired"> = {};
+      for (const b of json.schools as { id: string; effectiveStatus: "trial" | "active" | "expired" }[]) map[b.id] = b.effectiveStatus;
+      setBilling(map);
+    } catch {
+      // the badge is a nicety: the card still works without it
+    }
+  }, []);
+  useEffect(() => {
+    loadBilling();
+    return onBillingRefresh(loadBilling);
+  }, [loadBilling]);
   const [staleCount, setStaleCount] = useState(0);
   const [showPurge, setShowPurge] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -231,7 +250,24 @@ export default function OwnerSchools() {
                 <p className="truncate font-display text-[14.5px] font-semibold text-ink dark:text-white">{s.name}</p>
                 <p className="mt-0.5 truncate text-[12px] text-ink/45 dark:text-white/45">/s/{s.code}</p>
               </div>
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium capitalize ${STATUS_STYLE[s.status]}`}>{s.status}</span>
+              {(() => {
+                const sub = billing[s.school_id];
+                const locked = s.status === "active" && sub === "expired";
+                return (
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium capitalize ${
+                        locked ? "bg-crimson-50 text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500" : STATUS_STYLE[s.status]
+                      }`}
+                    >
+                      {locked ? "Locked" : s.status}
+                    </span>
+                    {s.status === "active" && sub === "trial" && (
+                      <span className="rounded-full bg-background-muted px-2 py-0.5 text-[10.5px] text-ink/60 dark:bg-white/5 dark:text-white/60">Trial</span>
+                    )}
+                  </span>
+                );
+              })()}
             </div>
 
             {s.status === "pending" && pendingInfo[s.school_id] && (

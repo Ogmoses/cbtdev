@@ -45,7 +45,7 @@ export function useActionItems(role: Role) {
         if (res.ok) {
           const pending = ((await res.json()).pending ?? {}) as Record<string, { verified: boolean }>;
           const ready = Object.values(pending).filter((p) => p.verified).length;
-          if (ready > 0) found.push({ key: "approvals", label: `${plural(ready, "school is", "schools are")} waiting for your approval`, count: ready, href: "/owner" });
+          if (ready > 0) found.push({ key: "approvals", label: `${plural(ready, "school is", "schools are")} waiting for your approval`, count: ready, href: "/owner#schools" });
         }
       }
 
@@ -108,8 +108,8 @@ export function useActionItems(role: Role) {
         const res = await fetch("/api/owner/billing/summary", { cache: "no-store" });
         if (res.ok) {
           const { locked = 0, endingSoon = 0 } = await res.json();
-          if (locked > 0) found.push({ key: "billing-locked", label: `${plural(locked, "school is", "schools are")} locked (term ended)`, count: locked, href: "/owner" });
-          if (endingSoon > 0) found.push({ key: "billing-soon", label: `${plural(endingSoon, "school's term ends", "schools' terms end")} within 7 days`, count: endingSoon, href: "/owner" });
+          if (locked > 0) found.push({ key: "billing-locked", label: `${plural(locked, "school is", "schools are")} locked (term ended)`, count: locked, href: "/owner#billing" });
+          if (endingSoon > 0) found.push({ key: "billing-soon", label: `${plural(endingSoon, "school's term ends", "schools' terms end")} within 7 days`, count: endingSoon, href: "/owner#billing" });
         }
       }
 
