@@ -1,4 +1,4 @@
-# CBT & School Management Platform (multi-school)
+# CBT & School Management Platform (multi-school) 
 
 A deployable Next.js (App Router) + Supabase platform for computer-based
 testing and school management. **One deployment hosts many independent
