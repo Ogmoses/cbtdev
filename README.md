@@ -80,6 +80,7 @@ Vercel has its own copy, so deployments are unaffected.
 | 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
 | 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
 | 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+| 031 | term billing: `schools.subscription_status` + `term_ends_at`; private owner-only `school_billing` (agreed fee, payment notes, reminder mark); owner-set renewal contact / currency / time zone on `platform_settings`; `apply_school_billing()` |
 | 030 | `school_exports` + private `school-exports` bucket — ZIP exports of a school's data, kept 30 days, owner sees all (even of deleted schools), a school admin only their own school's |
 | 029 | `edit_announcement()` — edits a live/scheduled broadcast (content, audience, schools, schedule, optional "show again") in one all-or-nothing step |
 Tests (both roll themselves back; safe on the live database): `database/tests/multi_tenant_isolation_test.sql` (33 checks) and `database/tests/command_center_isolation_test.sql` (42 checks: audit log, flags, broadcasts, support, telemetry access).
@@ -746,4 +747,20 @@ and the owner's go-ahead.
   until it is added there. Text starting with `= + - @` gets a leading `'` so a spreadsheet can't run it as a formula, and
   each CSV starts with a UTF-8 marker so Excel shows Yoruba/Igbo/Hausa letters correctly. `lib/zip.ts` is a small
   dependency-free ZIP writer (tested against Python's `zipfile` and `unzip`).
+- **Manual term-based billing** (migration 031; `lib/billing.ts`, `lib/schoolLock.ts`, `proxy.ts`, `/renewal`, `components/owner/OwnerBilling.tsx`,
+  `/api/owner/billing[/settings|/summary]`, `/api/billing/notice`, `/api/cron/billing`, `vercel.json`): each approved school has a status
+  (**trial / active / expired**) and a term end date (`schools`), plus a negotiated **fee** and **payment notes** in the private owner-only
+  `school_billing` table (not on `schools`: every student and teacher can read their own school's row). The owner panel on `/owner` shows
+  each school's state, extends access in one click (**+1 month**, **+1 term = 90 days**, counted from the current end date or from today if
+  it has passed; access runs to the end of the chosen day in the owner's time zone), sets a date, edits fee/notes, and has a manual
+  **Lock now / Unlock**. **A school is locked** when it is set to expired OR its end date has passed (no end date = never locks).
+  The lock is enforced in `proxy.ts` (like maintenance mode), NOT in the database rules: staff and students are sent to `/renewal`
+  (APIs answer 403), the owner is never locked, a student already mid-exam can finish it (exam page + exam APIs while their session is
+  active with a heartbeat in the last hour), nothing is deleted, and a lookup failure fails open. A change reaches everyone within ~30 s.
+  A direct database call with a student's own login is not blocked by the lock (it is a billing lock, not a security rule).
+  **Daily job** (`/api/cron/billing`, Vercel Cron 07:00 UTC, needs the `CRON_SECRET` env var; without it the job refuses to run):
+  (1) marks schools whose end date has passed as expired (audit-logged as "system"); (2) emails each school's admins once per end
+  date when it is within 7 days (from the school's name, with the owner's contact). A new end date earns a new reminder. Owner-set contact,
+  message and currency symbol live in the "Renewal contact" card; the owner's bell shows schools locked / ending within 7 days.
+  Existing schools were set to Active with no end date when this shipped (so nobody was locked); new schools start as Trial.
 

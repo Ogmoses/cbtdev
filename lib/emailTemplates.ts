@@ -142,3 +142,26 @@ export function supportUpdateEmailHtml(opts: {
     ${button("View your request", opts.link)}`;
   return shell(opts.schoolName, body);
 }
+
+/** Sent to a school's admins about 7 days before its term access ends. */
+export function renewalReminderEmailHtml(opts: {
+  schoolName: string;
+  fullName: string;
+  endsOn: string; // already formatted, e.g. "Monday 15 December 2026"
+  daysLeft: number;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  message: string | null;
+}): string {
+  const contact = [opts.contactEmail ? `Email: ${escapeHtml(opts.contactEmail)}` : "", opts.contactPhone ? `Phone: ${escapeHtml(opts.contactPhone)}` : ""].filter(Boolean).join("<br>");
+  const note = opts.message ? `<p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;white-space:pre-line;">${escapeHtml(opts.message)}</p>` : "";
+  const body = `
+    <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">Your school's access is ending soon</h1>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Hi ${escapeHtml(opts.fullName)},</p>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Access to the CBT platform for <strong>${escapeHtml(opts.schoolName)}</strong> ends on <strong>${escapeHtml(opts.endsOn)}</strong> (${opts.daysLeft} day${opts.daysLeft === 1 ? "" : "s"} from now). After that date, staff and students will see a renewal notice instead of the dashboard.</p>
+    ${note}
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">To renew, please get in touch${contact ? ":" : " with the platform administrator."}</p>
+    ${contact ? `<p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.7;">${contact}</p>` : ""}
+    <p style="margin:12px 0 0;color:#1A1A1A80;font-size:12px;line-height:1.6;">Exams already in progress when access ends can still be finished.</p>`;
+  return shell(opts.schoolName, body);
+}

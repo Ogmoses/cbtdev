@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlatformFlags } from "@/lib/platformFlags";
+import { isSchoolLocked } from "@/lib/schoolLock";
 
 /**
  * Refreshes the Supabase auth cookie on every request (required for
@@ -28,26 +29,33 @@ import { getPlatformFlags } from "@/lib/platformFlags";
  */
 
 /** Open to everyone while maintenance is on. */
-const ALWAYS_OPEN = ["/maintenance", "/login", "/api/platform/status", "/api/server-time"];
+const ALWAYS_OPEN = ["/maintenance", "/login", "/api/platform/status", "/api/server-time", "/api/cron"];
+/** Open to a signed-in person whose school is LOCKED (term ended / manual lock): the renewal notice and what it needs. */
+const OPEN_WHEN_LOCKED = ["/renewal", "/maintenance", "/api/billing/notice", "/api/platform/status", "/api/server-time", "/api/auth", "/api/cron"];
 /** Open only to a student who currently has a live exam. */
 const LIVE_EXAM_PATHS = ["/student/exam/", "/api/exam-sessions/"];
 /** A session counts as "in progress" only if it has been active in the last hour (a walked-away tab shouldn't keep the exemption forever). */
 const LIVE_EXAM_MAX_IDLE_MS = 60 * 60 * 1000;
 const ROLE_CACHE_MS = 30_000;
 
-const roleCache = new Map<string, { role: string | null; at: number }>();
+const roleCache = new Map<string, { role: string | null; schoolId: string | null; at: number }>();
+
+async function profileOf(userId: string): Promise<{ role: string | null; schoolId: string | null }> {
+  const hit = roleCache.get(userId);
+  if (hit && Date.now() - hit.at < ROLE_CACHE_MS) return { role: hit.role, schoolId: hit.schoolId };
+  try {
+    const { data } = await createAdminClient().from("users").select("role, school_id").eq("id", userId).maybeSingle();
+    const role = (data?.role as string | undefined) ?? null;
+    const schoolId = (data?.school_id as string | undefined) ?? null;
+    roleCache.set(userId, { role, schoolId, at: Date.now() });
+    return { role, schoolId };
+  } catch {
+    return { role: null, schoolId: null };
+  }
+}
 
 async function roleOf(userId: string): Promise<string | null> {
-  const hit = roleCache.get(userId);
-  if (hit && Date.now() - hit.at < ROLE_CACHE_MS) return hit.role;
-  try {
-    const { data } = await createAdminClient().from("users").select("role").eq("id", userId).maybeSingle();
-    const role = (data?.role as string | undefined) ?? null;
-    roleCache.set(userId, { role, at: Date.now() });
-    return role;
-  } catch {
-    return null;
-  }
+  return (await profileOf(userId)).role;
 }
 
 async function hasLiveExam(userId: string): Promise<boolean> {
@@ -112,6 +120,29 @@ export async function proxy(request: NextRequest) {
         );
       }
       return NextResponse.redirect(new URL("/maintenance", request.url));
+    }
+  }
+
+  // SUBSCRIPTION LOCK (migration 031): a school whose term has ended (or that the owner locked) is sent to the
+  // renewal notice. The owner is never locked; a student who is in the middle of an exam can finish it (exam page +
+  // exam APIs only); nothing is deleted. Fails open if the school can't be looked up (lib/schoolLock.ts).
+  if (auth.user) {
+    const pathname = request.nextUrl.pathname;
+    const openWhenLocked = OPEN_WHEN_LOCKED.some((p) => pathname === p || pathname.startsWith(p + "/"));
+    if (!openWhenLocked) {
+      const { role, schoolId } = await profileOf(auth.user.id);
+      if (schoolId && role && role !== "platform_owner" && (await isSchoolLocked(schoolId))) {
+        const finishingExam = role === "student" && LIVE_EXAM_PATHS.some((p) => pathname.startsWith(p)) && (await hasLiveExam(auth.user.id));
+        if (!finishingExam) {
+          if (pathname.startsWith("/api/")) {
+            return NextResponse.json(
+              { error: "Your school's access has ended. Please contact the platform administrator.", code: "subscription_expired" },
+              { status: 403, headers: { "Cache-Control": "no-store" } }
+            );
+          }
+          return NextResponse.redirect(new URL("/renewal", request.url));
+        }
+      }
     }
   }
 

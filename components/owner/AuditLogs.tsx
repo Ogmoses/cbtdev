@@ -26,6 +26,7 @@ const FILTERS: { label: string; value: string }[] = [
   { label: "Reactivated", value: "school.reactivate" },
   { label: "Deletions", value: "school.delete%" },
   { label: "Stale sign-up clean-ups", value: "school.purge_stale%" },
+  { label: "Billing", value: "billing.%" },
   { label: "Data exports", value: "school.export%" },
   { label: "Support tickets", value: "support.%" },
   { label: "Broadcasts", value: "broadcast.%" },
@@ -44,6 +45,10 @@ const LABELS: Record<string, string> = {
   "school.purge_stale_started": "Old sign-up removal started",
   "school.purge_stale_completed": "Old sign-up removed",
   "school.purge_stale_failed": "Old sign-up removal failed",
+  "billing.update": "Billing updated",
+  "billing.auto_expired": "Term ended: school locked",
+  "billing.reminder_sent": "Renewal reminder emailed",
+  "billing.contact_updated": "Renewal contact updated",
   "school.export_created": "Data export started",
   "school.export_downloaded": "Data export downloaded",
   "school.export_deleted": "Data export removed",
@@ -63,7 +68,7 @@ const LABELS: Record<string, string> = {
 };
 
 function tone(action: string): string {
-  if (action.includes("delete") || action.includes("purge") || action.endsWith("suspend") || action === "flags.maintenance_on" || action === "flags.signups_closed") return "bg-crimson-50 text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500";
+  if (action.includes("delete") || action.includes("purge") || action === "billing.auto_expired" || action.endsWith("suspend") || action === "flags.maintenance_on" || action === "flags.signups_closed") return "bg-crimson-50 text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500";
   if (action.endsWith("approve") || action.endsWith("reactivate") || action.endsWith("create") || action === "flags.maintenance_off" || action === "flags.signups_opened") return "bg-success/10 text-success";
   return "bg-background-muted text-ink/70 dark:bg-white/5 dark:text-white/70";
 }

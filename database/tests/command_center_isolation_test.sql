@@ -14,7 +14,7 @@ declare
   p text; who uuid; fails text := ''; checks int := 0; n int;
   got_ann text; got_tix text; got_audit int; got_flags int; got_views int; got_events boolean;
   exp_ann text; exp_tix text; exp_views int; chain_ok boolean;
-  got_exp text; exp_exp text; ghost uuid := gen_random_uuid();
+  got_exp text; exp_exp text; ghost uuid := gen_random_uuid(); got_bill int;
 begin
   select u.id, u.school_id into t, sch from users u
    where u.role = 'teacher' and exists (select 1 from users x where x.role = 'super_admin' and x.school_id = u.school_id) limit 1;
@@ -39,6 +39,7 @@ begin
   insert into support_tickets (school_id, created_by, created_by_name, created_by_role, subject, message) values (sch, a, 'A', 'super_admin', 'K2', 'm') returning id into k2;
   insert into support_tickets (school_id, created_by, created_by_name, created_by_role, subject, message) values (other, null, 'X', 'teacher', 'K3', 'm') returning id into k3;
   insert into support_ticket_views (ticket_id, user_id) values (k1, t), (k1, a);
+  insert into school_billing (school_id, agreed_fee, payment_notes) values (sch, 1, 'private note');
   insert into school_exports (school_id, school_name, school_code, requested_by_role, status) values (sch, 'X1', 'c1', 'super_admin', 'ready');
   insert into school_exports (school_id, school_name, school_code, requested_by_role, status) values (other, 'X2', 'c2', 'platform_owner', 'ready');
   insert into school_exports (school_id, school_name, school_code, requested_by_role, status) values (ghost, 'X3', 'c3', 'platform_owner', 'ready');  -- a school that no longer exists
@@ -60,7 +61,8 @@ begin
      or has_function_privilege('authenticated', 'platform_telemetry(timestamptz,int)', 'execute')
      or has_function_privilege('authenticated', 'record_login_event(uuid,text)', 'execute')
      or has_function_privilege('authenticated', 'edit_announcement(uuid,text,text,text,text,boolean,uuid[],timestamptz,timestamptz,boolean)', 'execute')
-     or has_function_privilege('authenticated', 'revoke_user_sessions(uuid)', 'execute') then
+     or has_function_privilege('authenticated', 'revoke_user_sessions(uuid)', 'execute')
+     or has_function_privilege('authenticated', 'apply_school_billing(uuid,jsonb)', 'execute') then
     fails := fails || 'a server-only function is callable from the browser; ';
   end if;
   checks := checks + 1;
@@ -82,6 +84,7 @@ begin
     select count(*) into got_views from support_ticket_views where ticket_id = k1;
     begin perform 1 from platform_events limit 1; got_events := true; exception when others then got_events := false; end;
     got_exp := coalesce((select string_agg(school_name, ',' order by school_name) from school_exports where school_name in ('X1','X2','X3')), '');
+    select count(*) into got_bill from school_billing;
     reset role;
 
     exp_ann := case p when 'teacher' then 'A1,A6' when 'admin' then 'A1,A2' when 'student' then '' else 'A1,A2,A3,A4,A5,A6' end;
@@ -95,7 +98,8 @@ begin
     if got_events then fails := fails || format('%s can read platform_events; ', p); end if;
     exp_exp := case p when 'admin' then 'X1' when 'owner' then 'X1,X2,X3' else '' end;
     if got_exp <> exp_exp then fails := fails || format('%s sees data exports [%s] expected [%s]; ', p, got_exp, exp_exp); end if;
-    checks := checks + 8;
+    if (p = 'owner') <> (got_bill > 0) then fails := fails || format('%s sees %s billing rows; ', p, got_bill); end if;
+    checks := checks + 9;
   end loop;
 
   -- what a teacher must NOT be able to do
@@ -114,8 +118,11 @@ begin
   begin insert into school_exports (school_id, school_name, school_code, requested_by_role) values (sch, 'Z', 'z', 'super_admin'); fails := fails || 'staff can create export records; '; exception when others then null; end;
   begin update school_exports set status = 'failed'; get diagnostics n = row_count; if n > 0 then fails := fails || 'staff can change export records; '; end if; exception when others then null; end;
   begin delete from school_exports; get diagnostics n = row_count; if n > 0 then fails := fails || 'staff can delete export records; '; end if; exception when others then null; end;
+  begin update schools set term_ends_at = now() + interval '5 years' where id = sch; get diagnostics n = row_count; if n > 0 then fails := fails || 'staff can change their own term end date; '; end if; exception when others then null; end;
+  begin update schools set subscription_status = 'active' where id = sch; get diagnostics n = row_count; if n > 0 then fails := fails || 'staff can change their own subscription status; '; end if; exception when others then null; end;
+  begin insert into school_billing (school_id) values (other); fails := fails || 'staff can write billing rows; '; exception when others then null; end;
   reset role;
-  checks := checks + 12;
+  checks := checks + 15;
 
   if fails = '' then
     raise notice 'RESULT: PASS (% checks)', checks;

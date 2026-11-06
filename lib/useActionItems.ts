@@ -103,6 +103,16 @@ export function useActionItems(role: Role) {
         }
       }
 
+      // Billing (owner): schools that are locked now, and schools whose term ends within 7 days.
+      if (role === "platform_owner") {
+        const res = await fetch("/api/owner/billing/summary", { cache: "no-store" });
+        if (res.ok) {
+          const { locked = 0, endingSoon = 0 } = await res.json();
+          if (locked > 0) found.push({ key: "billing-locked", label: `${plural(locked, "school is", "schools are")} locked (term ended)`, count: locked, href: "/owner" });
+          if (endingSoon > 0) found.push({ key: "billing-soon", label: `${plural(endingSoon, "school's term ends", "schools' terms end")} within 7 days`, count: endingSoon, href: "/owner" });
+        }
+      }
+
       setItems(found);
     } catch {
       // A failed lookup just means an empty bell, never a broken page.

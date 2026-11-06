@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import PageLoading from "@/components/layout/PageLoading";
 import OwnerSchools from "@/components/owner/OwnerSchools";
 import OwnerTelemetry from "@/components/owner/OwnerTelemetry";
+import OwnerBilling from "@/components/owner/OwnerBilling";
 import { useAuthUser, signOutAndRedirect } from "@/lib/useAuthUser";
 import { roleHome } from "@/lib/roleHome";
 
@@ -23,6 +24,7 @@ export default function OwnerPage() {
   return (
     <DashboardLayout role="platform_owner" pageTitle="Command Center" userName={authUser.fullName} onLogout={() => signOutAndRedirect(router)}>
       <OwnerTelemetry />
+      <OwnerBilling />
       <OwnerSchools />
     </DashboardLayout>
   );

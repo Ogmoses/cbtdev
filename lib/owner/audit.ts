@@ -2,7 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** One audit entry. Never put secrets, passwords, invite links or student personal data in `details`. */
 export interface AuditEntry {
-  actorId: string;
+  /** null for automatic actions (the daily billing job). */
+  actorId: string | null;
   actorEmail?: string | null;
   /** Dotted verb, e.g. "school.approve". */
   action: string;
