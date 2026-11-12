@@ -1,4 +1,4 @@
-# CBT & School Management Platform (multi-school) 
+# CBT & School Management Platform (multi-school)
 
 A deployable Next.js (App Router) + Supabase platform for computer-based
 testing and school management. **One deployment hosts many independent
@@ -80,6 +80,7 @@ Vercel has its own copy, so deployments are unaffected.
 | 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
 | 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
 | 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+| 032 | `email_change_requests` — pending school-admin email changes (two single-use link hashes, who approved, 24 h expiry); server-only, no browser access |
 | 031 | term billing: `schools.subscription_status` + `term_ends_at`; private owner-only `school_billing` (agreed fee, payment notes, reminder mark); owner-set renewal contact / currency / time zone on `platform_settings`; `apply_school_billing()` |
 | 030 | `school_exports` + private `school-exports` bucket — ZIP exports of a school's data, kept 30 days, owner sees all (even of deleted schools), a school admin only their own school's |
 | 029 | `edit_announcement()` — edits a live/scheduled broadcast (content, audience, schools, schedule, optional "show again") in one all-or-nothing step |
@@ -766,4 +767,17 @@ and the owner's go-ahead.
 - **Billing follow-ups**: the owner's school cards now show **Locked** (and a **Trial** tag) next to the approval status, refreshed the moment
   billing changes (`lib/billingEvents.ts`); the bell's school items link to `/owner#billing` / `/owner#schools` and the bell scrolls to the
   section when you're already on that page (a plain link to the page you're on does nothing visible).
+- **School admin email change** (migration 032; `lib/emailChange.ts`, `/api/account/email-change`, `/api/email-change/{lookup,respond}`,
+  `/confirm-email-change`, `components/profile/ChangeEmail.tsx` on the Profile page, school admins only): the admin enters a new address;
+  an approval email goes to the CURRENT address and a confirmation email to the NEW one, each with its own single-use link (24 h). Opening a
+  link only shows the request; nothing is approved until the **Approve** button is pressed (a POST), so mail scanners can't use the links up.
+  Only SHA-256 hashes of the link secrets are stored. When BOTH have approved, the email is changed in the login system (`auth.users`) and in
+  `public.users` together (rolled back together if either fails), every existing sign-in of that person is ended
+  (`revoke_user_sessions`), and the old address gets a "your email was changed" notice. Either side can **Decline** (cancels); a new request
+  replaces an older pending one; the admin can cancel from the Profile page. If the new address already belongs to an account the screen says
+  so. Limits: 3 requests/hour per person, 2 confirmations/day per new address. Audit-logged (addresses are partly masked).
+  **If an admin has lost access to their old email** (so can't approve), the owner changes it by hand: ask the developer/Claude to run, for that
+  user id and new address: `update auth.users set email = '<new>', email_confirmed_at = coalesce(email_confirmed_at, now()) where id = '<id>';`
+  `update auth.identities set identity_data = jsonb_set(identity_data, '{email}', to_jsonb('<new>'::text)) where user_id = '<id>' and provider = 'email';`
+  `update public.users set email = '<new>' where id = '<id>';` (all three, lower-case), then `select revoke_user_sessions('<id>');`, and verify they can sign in.
 

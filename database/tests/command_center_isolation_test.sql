@@ -121,8 +121,10 @@ begin
   begin update schools set term_ends_at = now() + interval '5 years' where id = sch; get diagnostics n = row_count; if n > 0 then fails := fails || 'staff can change their own term end date; '; end if; exception when others then null; end;
   begin update schools set subscription_status = 'active' where id = sch; get diagnostics n = row_count; if n > 0 then fails := fails || 'staff can change their own subscription status; '; end if; exception when others then null; end;
   begin insert into school_billing (school_id) values (other); fails := fails || 'staff can write billing rows; '; exception when others then null; end;
+  begin perform 1 from email_change_requests; fails := fails || 'staff can read email change requests; '; exception when others then null; end;
+  begin insert into email_change_requests (user_id, school_id, old_email, new_email, old_token_hash, new_token_hash) values (t, sch, 'a', 'b', 'x1', 'x2'); fails := fails || 'staff can write email change requests; '; exception when others then null; end;
   reset role;
-  checks := checks + 15;
+  checks := checks + 17;
 
   if fails = '' then
     raise notice 'RESULT: PASS (% checks)', checks;

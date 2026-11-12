@@ -19,6 +19,7 @@ import { useAuthUser, signOutAndRedirect } from "@/lib/useAuthUser";
 import { useColorScheme } from "@/lib/useColorScheme";
 import type { ColorScheme } from "@/lib/colorScheme";
 import PageLoading from "@/components/layout/PageLoading";
+import ChangeEmail from "@/components/profile/ChangeEmail";
 
 const ROLE_LABEL: Record<string, string> = {
   platform_owner: "Platform owner",
@@ -137,6 +138,8 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
+          {authUser.role === "super_admin" && <ChangeEmail currentEmail={details?.email ?? null} />}
 
           <AppearanceSection scheme={scheme} onChange={setScheme} />
         </div>

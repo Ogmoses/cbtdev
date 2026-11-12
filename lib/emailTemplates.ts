@@ -165,3 +165,56 @@ export function renewalReminderEmailHtml(opts: {
     <p style="margin:12px 0 0;color:#1A1A1A80;font-size:12px;line-height:1.6;">Exams already in progress when access ends can still be finished.</p>`;
   return shell(opts.schoolName, body);
 }
+
+/** To the CURRENT address: "do you approve changing this account's email?" */
+export function emailChangeApproveOldHtml(opts: { schoolName: string; fullName: string; oldEmail: string; newEmail: string; link: string; expiresInHours: number }): string {
+  const body = `
+    <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">Approve an email change?</h1>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Hi ${escapeHtml(opts.fullName)},</p>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">A request was made to change the sign-in email for your ${escapeHtml(opts.schoolName)} account:</p>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.8;">From: <strong>${escapeHtml(opts.oldEmail)}</strong><br>To: <strong>${escapeHtml(opts.newEmail)}</strong></p>
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Nothing changes until <strong>both</strong> this address and the new one approve. If this was you, review and approve it:</p>
+    ${button("Review the request", opts.link)}
+    <p style="margin:12px 0 0;color:#1A1A1A80;font-size:12px;line-height:1.6;">This link works once and expires in ${opts.expiresInHours} hours. Didn't ask for this? Open the link and choose Decline (or just ignore this email, since nothing changes without your approval), and consider changing your password.</p>`;
+  return shell(opts.schoolName, body);
+}
+
+/** To the NEW address: "is this address really yours?" */
+export function emailChangeConfirmNewHtml(opts: { schoolName: string; fullName: string; newEmail: string; link: string; expiresInHours: number }): string {
+  const body = `
+    <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">Confirm your new email address</h1>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">${escapeHtml(opts.fullName)} asked to use <strong>${escapeHtml(opts.newEmail)}</strong> as the sign-in email for their ${escapeHtml(opts.schoolName)} account.</p>
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">If this is your address and you expect this, please confirm it:</p>
+    ${button("Review the request", opts.link)}
+    <p style="margin:12px 0 0;color:#1A1A1A80;font-size:12px;line-height:1.6;">This link works once and expires in ${opts.expiresInHours} hours. If you don't recognise this, you can ignore the email or choose Decline: nothing will change.</p>`;
+  return shell(opts.schoolName, body);
+}
+
+/** To the OLD address after the change went through. */
+export function emailChangedNoticeOldHtml(opts: { schoolName: string; fullName: string; newEmail: string; contactEmail: string | null; contactPhone: string | null }): string {
+  const contact = [opts.contactEmail ? `Email: ${escapeHtml(opts.contactEmail)}` : "", opts.contactPhone ? `Phone: ${escapeHtml(opts.contactPhone)}` : ""].filter(Boolean).join("<br>");
+  const body = `
+    <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">Your sign-in email was changed</h1>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Hi ${escapeHtml(opts.fullName)}, the sign-in email for your ${escapeHtml(opts.schoolName)} account is now <strong>${escapeHtml(opts.newEmail)}</strong>. You have been signed out everywhere, and this address no longer signs in to the account.</p>
+    <p style="margin:0 0 6px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">If you did not approve this, contact the platform administrator straight away${contact ? ":" : "."}</p>
+    ${contact ? `<p style="margin:0;color:#1A1A1A;font-size:13.5px;line-height:1.7;">${contact}</p>` : ""}`;
+  return shell(opts.schoolName, body);
+}
+
+/** To the NEW address after the change went through. */
+export function emailChangedNoticeNewHtml(opts: { schoolName: string; fullName: string; link: string }): string {
+  const body = `
+    <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">Your new email is ready</h1>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Hi ${escapeHtml(opts.fullName)}, this address is now the sign-in email for your ${escapeHtml(opts.schoolName)} account. Your password has not changed.</p>
+    ${button("Sign in", opts.link)}`;
+  return shell(opts.schoolName, body);
+}
+
+/** To the CURRENT address when the new address declined, or the request was cancelled or failed. */
+export function emailChangeDeclinedHtml(opts: { schoolName: string; fullName: string; newEmail: string; reason: string }): string {
+  const body = `
+    <h1 style="margin:0 0 12px;color:#1A1A1A;font-size:17px;font-weight:600;">Email change not completed</h1>
+    <p style="margin:0 0 12px;color:#1A1A1A;font-size:13.5px;line-height:1.6;">Hi ${escapeHtml(opts.fullName)}, the request to change your ${escapeHtml(opts.schoolName)} sign-in email to <strong>${escapeHtml(opts.newEmail)}</strong> ${escapeHtml(opts.reason)}. Your email has not changed. You can start again from your profile at any time.</p>`;
+  return shell(opts.schoolName, body);
+}
+
