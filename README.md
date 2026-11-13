@@ -780,4 +780,13 @@ and the owner's go-ahead.
   user id and new address: `update auth.users set email = '<new>', email_confirmed_at = coalesce(email_confirmed_at, now()) where id = '<id>';`
   `update auth.identities set identity_data = jsonb_set(identity_data, '{email}', to_jsonb('<new>'::text)) where user_id = '<id>' and provider = 'email';`
   `update public.users set email = '<new>' where id = '<id>';` (all three, lower-case), then `select revoke_user_sessions('<id>');`, and verify they can sign in.
+- **School links admit only their own school's people** (`lib/schoolLoginCheck.ts`, used by `components/auth/SchoolLogin.tsx`): the staff sign-in used to
+  ignore the school in the link (only email + password were sent), so a teacher/admin of another school could sign in on any school's page. Right after
+  the password is accepted, the account's school is now compared with the link's school; a mismatch signs the person straight back out with "This account
+  belongs to a different school. Please sign in from your own school's link." (A wrong-school account is never told anything about that other school's status.)
+  Students were already tied to the link (their ID is only looked up inside that school). The platform owner is let through on any link (no school; `/login`
+  often sends the owner to a remembered school link), and the plain `/login` page stays the general entry. **This is a screen-level check, not the data
+  boundary** (that is the per-school database rules, unchanged); someone calling the login API directly can still sign in with their own valid credentials
+  — they only ever see their own school. A **server-checked staff sign-in** (check the school before the password is even tried, same error as a wrong
+  password, plus brute-force limits) is the stricter option, not built yet: it changes the core sign-in flow, so it needs a careful test on a preview deployment.
 

@@ -8,6 +8,7 @@ import { deriveStudentPassword } from "@/lib/studentCredential";
 import { roleHome } from "@/lib/roleHome";
 import { useSchool } from "@/components/SchoolProvider";
 import { fetchOwnSchool } from "@/lib/schoolBranding";
+import { schoolLoginProblem } from "@/lib/schoolLoginCheck";
 
 /**
  * The sign-in screen, used by both /login (the original address, which keeps
@@ -38,12 +39,17 @@ export default function SchoolLogin({ schoolCode }: { schoolCode?: string }) {
     }
   }, [schoolCode, router]);
 
-  /** A pending or suspended school can't be used — sign straight back out with a clear reason. (The platform owner has no school and passes.) */
+  /**
+   * After the password is accepted: on a school's own link the account must belong to THAT school (a teacher or admin of another
+   * school is turned away), and the school must be active (pending / suspended can't be used). Either way we sign straight back out
+   * with a clear reason. The platform owner has no school and passes. See lib/schoolLoginCheck.ts.
+   */
   const assertSchoolActive = async () => {
     const own = await fetchOwnSchool(supabase);
-    if (own && own.status !== "active") {
+    const problem = schoolLoginProblem(own, schoolCode);
+    if (problem) {
       await supabase.auth.signOut();
-      throw new Error(own.status === "pending" ? "Your school is still waiting for approval. We'll email you when it's ready." : "This school's access is currently paused. Please contact your administrator.");
+      throw new Error(problem);
     }
   };
 
