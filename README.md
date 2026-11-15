@@ -80,6 +80,7 @@ Vercel has its own copy, so deployments are unaffected.
 | 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
 | 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
 | 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+| 033 | 41 covering indexes for every foreign key that lacked one (`idx_fk_<table>_<columns>`), i.e. the Supabase advisor's "unindexed foreign keys" are all closed; ~680 kB, purely additive |
 | 032 | `email_change_requests` — pending school-admin email changes (two single-use link hashes, who approved, 24 h expiry); server-only, no browser access |
 | 031 | term billing: `schools.subscription_status` + `term_ends_at`; private owner-only `school_billing` (agreed fee, payment notes, reminder mark); owner-set renewal contact / currency / time zone on `platform_settings`; `apply_school_billing()` |
 | 030 | `school_exports` + private `school-exports` bucket — ZIP exports of a school's data, kept 30 days, owner sees all (even of deleted schools), a school admin only their own school's |
@@ -106,11 +107,15 @@ never while an exam is running if it touches exam tables. Delete each zip after 
 - ~~No audit log~~ — done (Pass 12, `/owner/audit-logs`). Billing is not part of the platform yet, so nothing bills or logs billing.
 - Students' passwords are derived from full name + student ID (by design, no PIN): anyone who
   knows both can sign in as that student. A per-student PIN would close it.
+  **Decision (owner, Nov 2026): keep it as it is. No per-student PIN will be built.** The risk is understood: a classmate who knows another student's
+  name and ID could sign in as them.
 - Leaked Password Protection (Supabase Auth setting) is off — a manual dashboard switch
   (may need a paid plan).
 - Performance items to revisit only at scale (flagged by the advisor, irrelevant today):
-  RLS rules call `auth.uid()` per row instead of `(select auth.uid())`; the composite foreign
-  keys' child columns have no covering index; several tables have multiple permissive policies.
+  RLS rules call `auth.uid()` per row instead of `(select auth.uid())` (18 policies; rewriting security
+  rules is high-risk: do it only with the isolation tests and an explicit decision); several tables have
+  multiple permissive policies. ~~Foreign keys without a covering index~~: closed by migration 033 (the
+  advisor now also lists the new indexes as "unused" until real traffic uses them: leave them).
 - Untested in a real browser by the author: the photo editor's touch gestures, the bell,
   auto sign-out on suspend. No automated tests for app code (only the database isolation tests).
 - No custom domain yet: the site runs on `*.vercel.app`, and emails are sent from a free-provider
@@ -170,8 +175,8 @@ Teacher portal is now complete end to end.
 - Supabase's **Leaked Password Protection** (checks new passwords against
   HaveIBeenPwned) is off by default and isn't something the project-level
   connector can toggle — Dashboard → Authentication → Policies to enable it.
-- Minor performance-only lints remain (a few unindexed foreign keys, some
-  policies that re-evaluate `auth.uid()` per row instead of once per query)
+- Minor performance-only lints remain (some policies that re-evaluate `auth.uid()` per row instead of
+  once per query; the foreign-key index lint was closed by migration 033)
   — fine at this school's scale, not worth the migration churn yet.
 
 | Auth: real Supabase sign-in (student PIN + staff password), pre-auth admission-number lookup | `app/login/page.tsx`, `app/api/auth/resolve-student-email/route.ts`, `lib/supabase/admin.ts` |
@@ -789,4 +794,14 @@ and the owner's go-ahead.
   boundary** (that is the per-school database rules, unchanged); someone calling the login API directly can still sign in with their own valid credentials
   — they only ever see their own school. A **server-checked staff sign-in** (check the school before the password is even tried, same error as a wrong
   password, plus brute-force limits) is the stricter option, not built yet: it changes the core sign-in flow, so it needs a careful test on a preview deployment.
+- **Uptime monitoring** (`/api/health`, optional `BILLING_JOB_HEARTBEAT_URL`): `GET /api/health` is public and read-only; it makes one tiny REAL database query and
+  answers **200** `{"ok":true,"db":{"ok":true,"ms":..},"version":"<short commit>"}` or **503** when the database errors or doesn't answer within 4 seconds. (Not
+  `/api/platform/status`: that one deliberately keeps saying "fine" when the database is down.) It is remembered for 10 s per server instance so it can't be used
+  to hammer the database, and it stays reachable during maintenance mode. **Set up** (Better Stack's free plan: 10 monitors + 10 heartbeats, 3-minute checks, no
+  commercial-use restriction): (1) *Monitor 1*: URL `https://cbtdev.vercel.app/api/health`, alert if the status isn't 200 (or the text `"ok":true` is missing), check
+  every 3 minutes, alert by email (and phone push). (2) *Monitor 2*: URL = a school's login page (`/s/<code>`), alert if not 200, so a broken page build is caught
+  too. (3) *Heartbeat*: create a heartbeat monitor with a 24-hour period and a 3-hour grace (Vercel's free cron may run up to an hour late), copy its URL into the
+  Vercel environment variable `BILLING_JOB_HEARTBEAT_URL` (production) and redeploy; the daily billing job then pings it when it finishes, so you are alerted if the
+  daily job ever silently stops (lock/expiry and renewal reminders depend on it). Read an alert as: 503 + `"db":{"ok":false}` = the database is unreachable or paused
+  (check the Supabase dashboard); no response at all = Vercel / the site itself; heartbeat missing = the cron job didn't run (Vercel project -> Cron Jobs -> Run).
 

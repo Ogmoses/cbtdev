@@ -29,7 +29,7 @@ import { isSchoolLocked } from "@/lib/schoolLock";
  */
 
 /** Open to everyone while maintenance is on. */
-const ALWAYS_OPEN = ["/maintenance", "/login", "/api/platform/status", "/api/server-time", "/api/cron"];
+const ALWAYS_OPEN = ["/maintenance", "/login", "/api/platform/status", "/api/server-time", "/api/cron", "/api/health"];
 /** Open to a signed-in person whose school is LOCKED (term ended / manual lock): the renewal notice and what it needs. */
 const OPEN_WHEN_LOCKED = ["/renewal", "/maintenance", "/api/billing/notice", "/api/platform/status", "/api/server-time", "/api/auth", "/api/cron", "/confirm-email-change", "/api/email-change"];
 /** Open only to a student who currently has a live exam. */

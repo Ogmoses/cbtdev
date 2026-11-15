@@ -106,5 +106,16 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Optional: tell an uptime service "the daily job ran", so it can alert if the job ever silently stops.
+  // Set BILLING_JOB_HEARTBEAT_URL in Vercel (the heartbeat URL the monitor gives you). Best effort; never affects the job.
+  const heartbeat = process.env.BILLING_JOB_HEARTBEAT_URL;
+  if (heartbeat) {
+    try {
+      await fetch(heartbeat, { method: "GET", signal: AbortSignal.timeout(5000) });
+    } catch {
+      /* the monitor will notice a missing ping, which is the point */
+    }
+  }
+
   return NextResponse.json({ ok: true, ...summary });
 }
