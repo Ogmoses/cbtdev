@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildReportCardData } from "@/lib/reportCard";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { signedPhotoUrl } from "@/lib/studentPhotos";
 
 /**
  * GET /api/report-cards/[studentId]/[termId]/data?comment=...&principal=...
@@ -24,7 +26,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ stud
   }
 
   try {
-    const data = await buildReportCardData(supabase, studentId, termId, { teacherComment, principalName });
+    // The report card was already authorised above and its student row read under the caller's own permissions, so the photo may now be signed.
+    const admin = createAdminClient();
+    const data = await buildReportCardData(supabase, studentId, termId, { teacherComment, principalName, resolvePhoto: (stored) => signedPhotoUrl(admin, stored) });
     return NextResponse.json(data);
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Couldn't load this report card." }, { status: 500 });

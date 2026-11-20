@@ -10,6 +10,7 @@
 
 import { Printer, Download } from "lucide-react";
 import type { ReportCardData } from "./types";
+import { formatScore } from "@/lib/scoreFormat";
 
 interface ReportCardPrintViewProps {
   data: ReportCardData;
@@ -42,7 +43,7 @@ export default function ReportCardPrintView({ data, pdfUrl }: ReportCardPrintVie
       </div>
 
       {/* The card itself */}
-      <div className="mx-auto max-w-3xl rounded-lg bg-white p-8 shadow-card print:rounded-none print:p-0 print:shadow-none">
+      <div className="mx-auto max-w-3xl rounded-lg bg-white p-8 text-ink shadow-card print:rounded-none print:p-0 print:shadow-none">
         {/* Letterhead */}
         <div className="flex items-center gap-3 border-b-2 border-crimson-600 pb-4">
           {data.logoUrl ? (
@@ -95,9 +96,9 @@ export default function ReportCardPrintView({ data, pdfUrl }: ReportCardPrintVie
             {data.subjects.map((s, i) => (
               <tr key={i} className="border-t border-black/5">
                 <td className="px-3 py-2 font-medium text-ink">{s.subjectName}</td>
-                <td className="px-3 py-2 text-center tabular-nums">{s.caScore.toFixed(1)}</td>
-                <td className="px-3 py-2 text-center tabular-nums">{s.terminalScore.toFixed(1)}</td>
-                <td className="px-3 py-2 text-center tabular-nums font-medium">{s.totalScore.toFixed(1)}/{s.maxScore}</td>
+                <td className="px-3 py-2 text-center tabular-nums text-ink">{formatScore(s.caScore)}</td>
+                <td className="px-3 py-2 text-center tabular-nums text-ink">{formatScore(s.terminalScore)}</td>
+                <td className="px-3 py-2 text-center tabular-nums font-medium text-ink">{formatScore(s.totalScore)}/{s.maxScore}</td>
                 <td className="px-3 py-2 text-center font-bold text-crimson-700">{s.gradeLetter ?? "—"}</td>
                 <td className="px-3 py-2 text-ink/50">{s.remark ?? ""}</td>
               </tr>

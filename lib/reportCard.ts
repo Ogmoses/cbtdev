@@ -94,7 +94,7 @@ export async function buildReportCardData(
   supabase: SupabaseClient,
   studentId: string,
   termId: string,
-  opts: { teacherComment?: string; principalName?: string } = {}
+  opts: { teacherComment?: string; principalName?: string; resolvePhoto?: (stored: string | null) => Promise<string | null> } = {}
 ): Promise<ReportCardData> {
   const { data: student } = await supabase.from("users").select("full_name, admission_number, class_id, photo_url, school_id").eq("id", studentId).single();
   if (!student || !student.class_id) throw new Error("Student not found or has no class assigned.");
@@ -131,7 +131,8 @@ export async function buildReportCardData(
     studentName: student.full_name,
     admissionNumber: student.admission_number ?? "",
     className: klass?.name ?? "",
-    studentPhotoUrl: student.photo_url,
+    // photo_url is a path in a private bucket: the route that called us turns it into a signed link (screen) or the image itself (PDF)
+    studentPhotoUrl: opts.resolvePhoto ? await opts.resolvePhoto(student.photo_url) : student.photo_url,
     termName: term?.name ?? "",
     sessionName: (session as any)?.name ?? "",
     subjects,

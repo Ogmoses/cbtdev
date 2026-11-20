@@ -14,7 +14,7 @@ import { allow } from "@/lib/rateLimit";
 export const EXPORT_BUCKET = "school-exports";
 const PAGE = 1000;
 const STALE_WORKING_MS = 15 * 60 * 1000;
-const FILE_BUCKETS = ["school-assets", "question-images"] as const;
+const FILE_BUCKETS = ["school-assets", "question-images", "student-photos"] as const;
 const MAX_FILES_TOTAL_BYTES = 30 * 1024 * 1024;
 const MAX_ONE_FILE_BYTES = 5 * 1024 * 1024;
 const FILES_TIME_BUDGET_MS = 35_000;

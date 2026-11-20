@@ -7,6 +7,7 @@ import { sendMail } from "@/lib/mailer";
 import { inviteEmailHtml } from "@/lib/emailTemplates";
 import { getSchoolNameServer } from "@/lib/schoolProfileServer";
 import { getCallerContext } from "@/lib/auth/callerContext";
+import { PHOTO_BUCKET } from "@/lib/studentPhotos";
 
 /**
  * Admin-only account management for students and teachers.
@@ -182,11 +183,16 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
   const admin = createAdminClient();
-  const { data: target } = await admin.from("users").select("id").eq("id", id).eq("school_id", ctx.schoolId).maybeSingle();
+  const { data: target } = await admin.from("users").select("id, photo_url").eq("id", id).eq("school_id", ctx.schoolId).maybeSingle();
   if (!target) return NextResponse.json({ error: "Person not found." }, { status: 404 });
 
   const { error } = await admin.auth.admin.deleteUser(id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // a deleted student's passport photo goes with them (best effort: the account is already gone)
+  if (target.photo_url && !/^https?:\/\//i.test(target.photo_url as string)) {
+    await admin.storage.from(PHOTO_BUCKET).remove([target.photo_url as string]).then(() => undefined, () => undefined);
+  }
 
   return NextResponse.json({ ok: true });
 }

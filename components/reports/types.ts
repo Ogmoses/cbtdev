@@ -4,8 +4,10 @@
 
 export interface ReportCardSubjectRow {
   subjectName: string;
-  caScore: number;
-  terminalScore: number;
+  /** null = no CA/CBT result for this subject (shown as N/A) */
+  caScore: number | null;
+  /** null = no terminal result for this subject (shown as N/A) */
+  terminalScore: number | null;
   totalScore: number;
   maxScore: number;
   gradeLetter: string | null;

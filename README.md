@@ -80,6 +80,7 @@ Vercel has its own copy, so deployments are unaffected.
 | 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
 | 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
 | 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+| 034 | private `student-photos` storage bucket (JPEG only, 500 KB per file, no browser access): student passport photos; `users.photo_url` holds the path |
 | 033 | 41 covering indexes for every foreign key that lacked one (`idx_fk_<table>_<columns>`), i.e. the Supabase advisor's "unindexed foreign keys" are all closed; ~680 kB, purely additive |
 | 032 | `email_change_requests` — pending school-admin email changes (two single-use link hashes, who approved, 24 h expiry); server-only, no browser access |
 | 031 | term billing: `schools.subscription_status` + `term_ends_at`; private owner-only `school_billing` (agreed fee, payment notes, reminder mark); owner-set renewal contact / currency / time zone on `platform_settings`; `apply_school_billing()` |
@@ -804,4 +805,21 @@ and the owner's go-ahead.
   Vercel environment variable `BILLING_JOB_HEARTBEAT_URL` (production) and redeploy; the daily billing job then pings it when it finishes, so you are alerted if the
   daily job ever silently stops (lock/expiry and renewal reminders depend on it). Read an alert as: 503 + `"db":{"ok":false}` = the database is unreachable or paused
   (check the Supabase dashboard); no response at all = Vercel / the site itself; heartbeat missing = the cron job didn't run (Vercel project -> Cron Jobs -> Run).
+- **Report card scores + N/A** (`lib/scoreFormat.ts`, `computeTermSubjectRollup` in `lib/grading.ts`): the CA/CBT, Terminal and Total cells were invisible in dark mode
+  (they had no text colour, so they inherited light text on the card's white page); the card now forces dark text. A subject with no CA exam, or no terminal exam,
+  this term shows **N/A** for that column (the rollup returns `null`, no longer a misleading 0); the Total still shows once any result exists. Same in the PDF.
+- **Student passport photos** (migration 034; `lib/studentPhotos.ts`, `lib/studentPhotoAdmin.ts`, `/api/admin/people/photo`, `components/admin/StudentPhotoField.tsx` in the
+  student editor, `ImageCropModal`'s `fixedAspect` passport mode): a school admin adds a photo one student at a time (edit the student -> Add photo -> crop to the 4:5 passport
+  frame). They are photos of children, so they are stored in a PRIVATE bucket (`<school_id>/<student_id>.jpg`; `users.photo_url` holds the path): no public link exists. The
+  report-card routes sign a one-hour link for the on-screen card and embed the image as data in the PDF, only after the usual access check. Only JPEG, 500 KB max, only for
+  students of the admin's own school, 400 uploads/hour. Deleting a student or a school removes their photos; the school data export includes them. Bulk upload by ZIP is not built.
+- **Editable name** (`/api/account/name`, `components/profile/EditableName.tsx`): a pencil beside the name on the Profile page for school admins, teachers and the platform owner
+  (students can't: their sign-in password is built from their name). 2-100 characters, must contain a letter, no markup/control characters, 10 changes/hour.
+- **Teacher ID sign-in** (`lib/staffIdLogin.ts`, `/api/auth/staff-id-login`, `components/auth/LoginForm.tsx`, `SchoolLogin.tsx`): on a school's own sign-in link the staff box reads
+  "Email or Teacher ID"; anything without an `@` is a Teacher ID (`users.staff_id`, unique within a school). The SERVER finds the teacher in that school, checks the password with the
+  login system and returns only the session tokens, which the page then installs (`setSession`): the teacher's email is never sent to the browser. Every failure (unknown school/ID,
+  inactive teacher, wrong password, a school admin's ID) gives the same "Incorrect Teacher ID or password." after a similar delay; limits: 30/10 min per connection, 8/10 min per account.
+  Teachers only (admins keep email). Not available on the plain `/login` page (IDs can repeat across schools). **Caveat**: these sign-ins reach Supabase from the server, so they share
+  Vercel's IP addresses for Supabase's per-IP sign-in limit; if many teachers sign in by ID in the same few minutes the page says "Sign-in is busy... use your email" (raise the limit under
+  Supabase -> Authentication -> Rate Limits if that ever happens).
 

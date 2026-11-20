@@ -9,6 +9,7 @@ import { useState } from "react";
 import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import type { PersonRole, PersonRow, TeacherAssignment } from "./types";
 import { useSchoolProfile, schoolAcronym, schoolSlug } from "@/lib/useSchoolProfile";
+import StudentPhotoField from "./StudentPhotoField";
 
 interface PersonEditorProps {
   role: PersonRole;
@@ -106,6 +107,7 @@ export default function PersonEditor({ role, initial, classOptions, subjectOptio
                   ))}
                 </select>
               </label>
+              <StudentPhotoField studentId={initial?.id} />
             </>
           ) : (
             <>

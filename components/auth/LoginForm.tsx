@@ -107,7 +107,7 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
         </div>
 
         {mode === "staff" && forgot ? (
-          <ForgotPasswordPanel initialEmail={email} onBack={() => setForgot(false)} />
+          <ForgotPasswordPanel initialEmail={email.includes("@") ? email : ""} onBack={() => setForgot(false)} />
         ) : (
         <>
         <form onSubmit={handleSubmit} className="space-y-3.5">
@@ -118,7 +118,14 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
             </>
           ) : (
             <>
-              <Field label="Email" value={email} onChange={setEmail} placeholder={`you@${schoolSlug(school.name)}.edu`} type="email" autoFocus />
+              <Field
+                label={schoolOverride ? "Email or Teacher ID" : "Email"}
+                value={email}
+                onChange={setEmail}
+                placeholder={schoolOverride ? `you@${schoolSlug(school.name)}.edu or your Teacher ID` : `you@${schoolSlug(school.name)}.edu`}
+                type={schoolOverride ? "text" : "email"}
+                autoFocus
+              />
               <Field
                 label="Password"
                 value={password}

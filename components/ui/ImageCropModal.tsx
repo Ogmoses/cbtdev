@@ -37,11 +37,13 @@ interface Props {
   title?: string;
   /** Longest side of the saved image, in pixels (never upscaled beyond the original's detail). */
   maxOutput?: number;
+  /** Lock the frame to this width/height ratio (e.g. 4/5 for a passport photo): no shape picker, and the result is always a JPEG. */
+  fixedAspect?: number;
   onCancel: () => void;
   onDone: (file: File) => void;
 }
 
-export default function ImageCropModal({ file, shape, title, maxOutput, onCancel, onDone }: Props) {
+export default function ImageCropModal({ file, shape, title, maxOutput, fixedAspect, onCancel, onDone }: Props) {
   const outputLimit = maxOutput ?? (shape === "circle" ? 512 : 1600);
 
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -86,7 +88,7 @@ export default function ImageCropModal({ file, shape, title, maxOutput, onCancel
   const w = turned ? natH : natW; // size after rotating
   const h = turned ? natW : natH;
 
-  const aspect = shape === "circle" ? 1 : (RECT_ASPECTS.find((a) => a.key === aspectKey)?.value ?? w / h);
+  const aspect = shape === "circle" ? 1 : (fixedAspect ?? RECT_ASPECTS.find((a) => a.key === aspectKey)?.value ?? w / h);
   let frameW = Math.min(stageW - 24, 360);
   let frameH = frameW / aspect;
   if (frameH > 330) {
@@ -179,7 +181,7 @@ export default function ImageCropModal({ file, shape, title, maxOutput, onCancel
       if (!ctx) throw new Error("no canvas");
       ctx.imageSmoothingQuality = "high";
 
-      const asPng = shape === "circle" || file.type === "image/png";
+      const asPng = shape === "circle" || (!fixedAspect && file.type === "image/png");
       if (shape === "circle") {
         ctx.beginPath();
         ctx.arc(outW / 2, outH / 2, outW / 2, 0, Math.PI * 2);
@@ -292,7 +294,7 @@ export default function ImageCropModal({ file, shape, title, maxOutput, onCancel
                 </button>
               </div>
 
-              {shape === "rect" && (
+              {shape === "rect" && !fixedAspect && (
                 <div className="flex flex-wrap justify-center gap-1.5">
                   {RECT_ASPECTS.map((a) => (
                     <button

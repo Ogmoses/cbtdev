@@ -77,9 +77,24 @@ export default function SchoolLogin({ schoolCode }: { schoolCode?: string }) {
     router.push("/student");
   };
 
-  const handleStaffLogin = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw new Error("Incorrect email or password.");
+  const handleStaffLogin = async (identifier: string, password: string) => {
+    if (identifier.includes("@")) {
+      const { error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+      if (error) throw new Error("Incorrect email or password.");
+    } else {
+      // A Teacher ID. It only means something inside one school, so it works from that school's own link; the server checks
+      // the ID and password and hands back the session (the teacher's email never reaches this page). See lib/staffIdLogin.ts.
+      if (!schoolCode) throw new Error("Teacher ID sign-in works from your school's own sign-in link. Please use that link, or sign in with your email.");
+      const res = await fetch("/api/auth/staff-id-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schoolCode, staffId: identifier, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Incorrect Teacher ID or password.");
+      const { error } = await supabase.auth.setSession({ access_token: data.accessToken, refresh_token: data.refreshToken });
+      if (error) throw new Error("We couldn't sign you in. Please try again.");
+    }
 
     await assertSchoolActive();
     trackLogin();

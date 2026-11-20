@@ -11,6 +11,7 @@
  */
 
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { formatScore } from "@/lib/scoreFormat";
 import type { ReportCardData } from "./types";
 
 // Font: the server route registers Liberation Sans (lib/reportFonts.ts) and passes its family name
@@ -41,8 +42,8 @@ const styles = StyleSheet.create({
   infoLine: { flexDirection: "row", marginBottom: 3 },
   infoLabel: { width: 90, color: MUTED },
   infoValue: { fontWeight: 600 },
-  photoBox: { width: 64, height: 72, borderWidth: 1, borderColor: BORDER, borderRadius: 4, objectFit: "cover" },
-  photoPlaceholder: { width: 64, height: 72, borderWidth: 1, borderColor: BORDER, borderRadius: 4, alignItems: "center", justifyContent: "center" },
+  photoBox: { width: 64, height: 80, borderWidth: 1, borderColor: BORDER, borderRadius: 4, objectFit: "cover" },
+  photoPlaceholder: { width: 64, height: 80, borderWidth: 1, borderColor: BORDER, borderRadius: 4, alignItems: "center", justifyContent: "center" },
   photoPlaceholderText: { fontSize: 7, color: MUTED },
 
   table: { borderWidth: 1, borderColor: BORDER, borderRadius: 4, marginBottom: 14 },
@@ -132,9 +133,9 @@ export default function ReportCardDocument({ data, fontFamily = "Helvetica" }: {
           {data.subjects.map((s, i) => (
             <View key={i} style={styles.tableRow}>
               <Text style={styles.colSubject}>{s.subjectName}</Text>
-              <Text style={styles.colScore}>{s.caScore.toFixed(1)}</Text>
-              <Text style={styles.colScore}>{s.terminalScore.toFixed(1)}</Text>
-              <Text style={styles.colScore}>{s.totalScore.toFixed(1)}/{s.maxScore}</Text>
+              <Text style={styles.colScore}>{formatScore(s.caScore)}</Text>
+              <Text style={styles.colScore}>{formatScore(s.terminalScore)}</Text>
+              <Text style={styles.colScore}>{formatScore(s.totalScore)}/{s.maxScore}</Text>
               <Text style={styles.colGrade}>{s.gradeLetter ?? "—"}</Text>
               <Text style={styles.colRemark}>{s.remark ?? ""}</Text>
             </View>

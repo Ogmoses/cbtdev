@@ -87,15 +87,17 @@ export function computeGradeLetter(percentage: number, scale: GradeBand[]): stri
  * not simply ca+terminal — it's rollupWeightedScore() across everything.
  */
 export function computeTermSubjectRollup(scores: (WeightedExamScore & { isTerminal: boolean })[]): {
-  caScore: number;
-  terminalScore: number;
+  /** null when this subject has no CA/CBT exam result this term (shown as "N/A", not as a misleading 0). */
+  caScore: number | null;
+  /** null when this subject has no terminal exam result this term. */
+  terminalScore: number | null;
   totalScore: number;
 } {
   const ca = scores.filter((s) => !s.isTerminal);
   const terminal = scores.filter((s) => s.isTerminal);
   return {
-    caScore: ca.length ? rollupWeightedScore(ca).percentageOf100 : 0,
-    terminalScore: terminal.length ? rollupWeightedScore(terminal).percentageOf100 : 0,
+    caScore: ca.length ? rollupWeightedScore(ca).percentageOf100 : null,
+    terminalScore: terminal.length ? rollupWeightedScore(terminal).percentageOf100 : null,
     totalScore: scores.length ? rollupWeightedScore(scores).percentageOf100 : 0,
   };
 }

@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState } from "react";
+import EditableName from "@/components/profile/EditableName";
 import { useRouter } from "next/navigation";
 import { User as UserIcon, Mail, Hash, GraduationCap, BookOpen, ShieldCheck, Sun, Moon, Monitor } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -41,6 +42,7 @@ export default function ProfilePage() {
   const supabase = createClient();
   const [details, setDetails] = useState<ProfileDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savedName, setSavedName] = useState<string | null>(null); // the new name right after an edit (other pages pick it up on their next load)
   const { scheme, setScheme } = useColorScheme();
 
   useEffect(() => {
@@ -90,7 +92,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <DashboardLayout role={authUser.role} pageTitle="Profile" userName={authUser.fullName} onLogout={() => signOutAndRedirect(router)}>
+    <DashboardLayout role={authUser.role} pageTitle="Profile" userName={savedName ?? authUser.fullName} onLogout={() => signOutAndRedirect(router)}>
       {loading ? (
         <PageLoading />
       ) : (
@@ -99,7 +101,7 @@ export default function ProfilePage() {
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-crimson-100 text-crimson-700">
               <UserIcon size={32} />
             </div>
-            <h1 className="mt-3 font-display text-[19px] font-semibold text-ink dark:text-white">{authUser.fullName}</h1>
+            <EditableName name={savedName ?? authUser.fullName} canEdit={authUser.role !== "student"} onSaved={setSavedName} />
             <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-crimson-50 px-3 py-1 text-[12.5px] font-semibold text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500">
               <ShieldCheck size={13} /> {ROLE_LABEL[authUser.role] ?? authUser.role}
             </span>
