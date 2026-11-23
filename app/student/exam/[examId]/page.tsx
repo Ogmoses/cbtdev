@@ -27,7 +27,7 @@ function StudentExamContent() {
 
   const [state, setState] = useState<"loading" | "error" | "ready" | "submitted">("loading");
   const [error, setError] = useState<string | null>(null);
-  const [session, setSession] = useState<{ sessionId: string; exam: ExamData; existingAnswers: AnswersMap } | null>(null);
+  const [session, setSession] = useState<{ sessionId: string; exam: ExamData; existingAnswers: AnswersMap; secondsLeft?: number } | null>(null);
   const [submissionResult, setSubmissionResult] = useState<{
     showResultInstantly: boolean;
     allowReview: boolean;
@@ -161,6 +161,7 @@ function StudentExamContent() {
       sessionId={session.sessionId}
       studentName={authUser?.fullName ?? ""}
       initialAnswers={session.existingAnswers}
+      initialSecondsLeft={session.secondsLeft}
       onAutoSave={handleAutoSave}
       onSubmit={handleSubmit}
     />
