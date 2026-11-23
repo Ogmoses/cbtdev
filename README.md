@@ -80,6 +80,10 @@ Vercel has its own copy, so deployments are unaffected.
 | 026 | live telemetry: `platform_events` (sign-in log: school + role only, 7 days), `platform_telemetry()`, `record_login_event()` |
 | 027 | `support_ticket_views` — who has read which ticket update (drives the bell + sidebar alert for admins/teachers) |
 | 028 | `revoke_user_sessions()` — signs one person out everywhere (used after a password reset) |
+| 038 | open sitting windows — `exam_batches.stays_open` / `closed_at` (teacher keeps a sitting open, closes and reopens it) and `student_exam_sessions.deadline_at` (each student's own finishing time, kept by the server; existing sessions back-filled from their start time) |
+| 037 | `results.published_at` — set by a trigger the moment a result is published (existing published results back-filled with their creation time); lets the student bell tell newly published results from old ones |
+| 036 | `notification_seen` — when a student last looked at each bell item (own rows readable, server-only writes); clears the bell dot once seen |
+| 035 | `schools.timezone` (default Africa/Lagos) — each school's own timezone for showing exam dates/times; changeable only by the platform owner (not in the school-admin update grant) |
 | 034 | private `student-photos` storage bucket (JPEG only, 500 KB per file, no browser access): student passport photos; `users.photo_url` holds the path |
 | 033 | 41 covering indexes for every foreign key that lacked one (`idx_fk_<table>_<columns>`), i.e. the Supabase advisor's "unindexed foreign keys" are all closed; ~680 kB, purely additive |
 | 032 | `email_change_requests` — pending school-admin email changes (two single-use link hashes, who approved, 24 h expiry); server-only, no browser access |
