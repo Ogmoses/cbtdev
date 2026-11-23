@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useMyPhoto } from "@/lib/useMyPhoto";
 import EditableName from "@/components/profile/EditableName";
 import { useRouter } from "next/navigation";
 import { User as UserIcon, Mail, Hash, GraduationCap, BookOpen, ShieldCheck, Sun, Moon, Monitor } from "lucide-react";
@@ -32,6 +33,7 @@ const ROLE_LABEL: Record<string, string> = {
 interface ProfileDetails {
   email: string | null;
   admissionNumber: string | null;
+  staffId: string | null;
   className: string | null;
   assignments: { subjectName: string; className: string }[];
 }
@@ -44,13 +46,16 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [savedName, setSavedName] = useState<string | null>(null); // the new name right after an edit (other pages pick it up on their next load)
   const { scheme, setScheme } = useColorScheme();
+  const photoUrl = useMyPhoto(authUser?.role === "student"); // the student's passport photo, if the school added one
+  const [photoFailed, setPhotoFailed] = useState(false);
+  useEffect(() => setPhotoFailed(false), [photoUrl]);
 
   useEffect(() => {
     if (!authUser) return;
     (async () => {
       const { data: profile, error: profileError } = await supabase
         .from("users")
-        .select("email, admission_number, class_id")
+        .select("email, admission_number, staff_id, class_id")
         .eq("id", authUser.id)
         .single();
       if (profileError) {
@@ -76,6 +81,7 @@ export default function ProfilePage() {
       setDetails({
         email: profile?.email ?? null,
         admissionNumber: profile?.admission_number ?? null,
+        staffId: profile?.staff_id ?? null,
         className,
         assignments,
       });
@@ -98,8 +104,13 @@ export default function ProfilePage() {
       ) : (
         <div className="mx-auto max-w-lg pb-10">
           <div className="flex flex-col items-center rounded-lg border border-black/5 bg-white px-6 py-8 text-center shadow-card dark:border-white/10 dark:bg-[#1A1C20]">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-crimson-100 text-crimson-700">
-              <UserIcon size={32} />
+            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-crimson-100 text-crimson-700">
+              {photoUrl && !photoFailed ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrl} alt={savedName ?? authUser.fullName} onError={() => setPhotoFailed(true)} className="h-full w-full object-cover" />
+              ) : (
+                <UserIcon size={32} />
+              )}
             </div>
             <EditableName name={savedName ?? authUser.fullName} canEdit={authUser.role !== "student"} onSaved={setSavedName} />
             <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-crimson-50 px-3 py-1 text-[12.5px] font-semibold text-crimson-700 dark:bg-crimson-600/15 dark:text-crimson-500">
@@ -109,6 +120,8 @@ export default function ProfilePage() {
 
           <div className="mt-5 divide-y divide-black/5 rounded-lg border border-black/5 bg-white shadow-card dark:divide-white/10 dark:border-white/10 dark:bg-[#1A1C20]">
             {authUser.role !== "student" && details?.email && <ProfileRow icon={Mail} label="Email" value={details.email} />}
+
+            {authUser.role === "teacher" && <ProfileRow icon={Hash} label="Teacher ID" value={details?.staffId ?? "—"} />}
 
             {authUser.role === "student" && (
               <>
