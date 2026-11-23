@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, Bell, ChevronDown, ChevronRight, LogOut, Loader2, User as UserIcon } from "lucide-react";
 import { useActionItems } from "@/lib/useActionItems";
+import { useMyPhoto } from "@/lib/useMyPhoto";
+import { markSeen } from "@/lib/notificationSeen";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface NavbarProps {
@@ -28,7 +30,11 @@ export default function Navbar({
   const [menuOpen, setMenuOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const router = useRouter();
-  const { items, loading, refresh, total } = useActionItems(role);
+  const { items, loading, refresh, total, unseenTotal } = useActionItems(role);
+  const myPhoto = useMyPhoto(role === "student"); // a student's passport photo replaces the generic avatar
+  const photoUrl = userPhotoUrl ?? myPhoto;
+  const [photoFailed, setPhotoFailed] = useState(false);
+  useEffect(() => setPhotoFailed(false), [photoUrl]); // a fresh link gets a fresh try
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-black/5 bg-white/90 px-4 backdrop-blur dark:border-white/10 dark:bg-[#16181C]/90 sm:px-6">
@@ -50,12 +56,17 @@ export default function Navbar({
             onClick={() => {
               setBellOpen((v) => !v);
               setMenuOpen(false);
-              if (!bellOpen) refresh();
+              if (!bellOpen) {
+                // Opening the bell counts as having seen what's in it: the student's dot clears. (markSeen re-reads
+                // the bell once it's saved, so a separate refresh here could only race it with older data.)
+                if (role === "student") void markSeen(["results", "upcoming"]);
+                else refresh();
+              }
             }}
             className="relative rounded-md p-2 text-ink/60 transition-colors duration-200 hover:bg-background-muted dark:text-white/60 dark:hover:bg-white/5"
           >
             <Bell size={19} />
-            {total > 0 && <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-crimson-600" />}
+            {unseenTotal > 0 && <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-crimson-600" />}
           </button>
 
           <AnimatePresence>
@@ -115,9 +126,9 @@ export default function Navbar({
             className="flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2 transition-colors duration-200 hover:bg-background-muted dark:hover:bg-white/5"
           >
             <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-crimson-100 text-crimson-700">
-              {userPhotoUrl ? (
+              {photoUrl && !photoFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={userPhotoUrl} alt={userName} className="h-full w-full object-cover" />
+                <img src={photoUrl} alt={userName} onError={() => setPhotoFailed(true)} className="h-full w-full object-cover" />
               ) : (
                 <UserIcon size={16} />
               )}
