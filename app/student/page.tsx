@@ -1,5 +1,6 @@
 "use client";
 
+import { batchState } from "@/lib/batchWindow";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -44,7 +45,7 @@ export default function StudentHomePage() {
         const [{ data: batchRows }, { data: sessionRows }, { data: resultRows }] = await Promise.all([
           supabase
             .from("batch_students")
-            .select("exam_batches(id, label, starts_at, ends_at, exams(id, title, duration_minutes, subjects(name)))")
+            .select("exam_batches(id, label, starts_at, ends_at, stays_open, closed_at, exams(id, title, duration_minutes, subjects(name)))")
             .eq("student_id", authUser.id),
           supabase.from("student_exam_sessions").select("exam_id, status").eq("student_id", authUser.id),
           supabase
@@ -62,12 +63,13 @@ export default function StudentHomePage() {
         for (const row of batchRows ?? []) {
           const b = (row as any).exam_batches;
           if (!b || !b.exams) continue;
-          const startsAt = new Date(b.starts_at);
-          const endsAt = new Date(b.ends_at);
+          const state = batchState(b, now);
           const status = sessionStatusByExam.get(b.exams.id);
           if (status === "submitted") continue; // already done — no longer relevant to the launchpad
 
-          if (now >= startsAt && now <= endsAt) {
+          // Open sittings can be entered. Someone already mid-exam can still resume even if the sitting has since
+          // closed — they carry on to their own deadline.
+          if (state === "open" || (state === "ended" && status === "active")) {
             available.push({
               examId: b.exams.id,
               batchId: b.id,
@@ -77,9 +79,10 @@ export default function StudentHomePage() {
               batchLabel: b.label,
               batchStartsAt: b.starts_at,
               batchEndsAt: b.ends_at,
+              windowState: "open",
               alreadyInProgress: status === "active",
             });
-          } else if (now < startsAt) {
+          } else if (state === "upcoming") {
             upcoming.push({
               id: b.id,
               examTitle: b.exams.title,
