@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, Users, Archive } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ExamBuilder, { type ExamFormData } from "@/components/teacher/ExamBuilder";
+import BatchWindowControls, { type SittingRow } from "@/components/teacher/BatchWindowControls";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthUser, signOutAndRedirect } from "@/lib/useAuthUser";
 import { useTeacherExamFormData } from "@/lib/useTeacherExamFormData";
@@ -22,6 +23,7 @@ export default function EditExamPage() {
 
   const [initial, setInitial] = useState<Partial<ExamFormData> | null>(null);
   const [locked, setLocked] = useState(false);
+  const [sittings, setSittings] = useState<SittingRow[]>([]); // for the open/close controls shown once the exam is locked
   const [resetBatches, setResetBatches] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadingExam, setLoadingExam] = useState(true);
@@ -32,7 +34,7 @@ export default function EditExamPage() {
       const [{ data: exam, error }, { data: eqRows }, { data: batchRows }] = await Promise.all([
         supabase.from("exams").select("*").eq("id", examId).single(),
         supabase.from("exam_questions").select("question_id, order_index").eq("exam_id", examId).order("order_index"),
-        supabase.from("exam_batches").select("id, label, starts_at, ends_at, lab_room").eq("exam_id", examId),
+        supabase.from("exam_batches").select("id, label, starts_at, ends_at, lab_room, stays_open, closed_at").eq("exam_id", examId),
       ]);
       if (error || !exam) {
         setLoadError("Couldn't find that exam.");
@@ -40,6 +42,7 @@ export default function EditExamPage() {
         return;
       }
 
+      setSittings((batchRows ?? []).map((b) => ({ id: b.id, label: b.label, starts_at: b.starts_at, ends_at: b.ends_at, stays_open: b.stays_open, closed_at: b.closed_at })));
       const batchIds = (batchRows ?? []).map((b) => b.id);
       const [sessionRes, resultRes, batchStudentRes] = await Promise.all([
         supabase.from("student_exam_sessions").select("id", { count: "exact", head: true }).eq("exam_id", examId),
@@ -97,6 +100,7 @@ export default function EditExamPage() {
                 startsAt: b.starts_at,
                 endsAt: b.ends_at,
                 labRoom: b.lab_room ?? undefined,
+                staysOpen: !!b.stays_open,
               })),
       });
       setLoadingExam(false);
@@ -153,6 +157,7 @@ export default function EditExamPage() {
             starts_at: new Date(b.startsAt).toISOString(),
             ends_at: new Date(b.endsAt).toISOString(),
             lab_room: b.labRoom || null,
+            stays_open: !!b.staysOpen,
           }))
         )
         .select("id");
@@ -183,11 +188,12 @@ export default function EditExamPage() {
       ) : loadError ? (
         <p className="py-10 text-center text-[13px] text-ink/50 dark:text-white/50">{loadError}</p>
       ) : locked ? (
+        <>
         <div className="mx-auto mt-4 max-w-md rounded-lg border border-warning/30 bg-warning/10 p-5 text-center">
           <AlertTriangle size={22} className="mx-auto text-warning" />
           <h1 className="mt-2 font-display text-[15px] font-semibold text-ink dark:text-white">This exam can't be edited directly</h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-ink/60 dark:text-white/60">
-            Students have already been assigned to it, started it, or finished it, so changing its questions or schedule now could disrupt or lose their work. View who's involved, or archive it from My Exams — once archived you can come back here to edit it and set up a new round.
+            Students have already been assigned to it, started it, or finished it, so changing its questions or schedule now could disrupt or lose their work. View who's involved, or archive it from My Exams — once archived you can come back here to edit it and set up a new round. You can still close or reopen its sittings below.
           </p>
           <div className="mt-4 flex justify-center gap-2.5">
             <Link
@@ -198,6 +204,8 @@ export default function EditExamPage() {
             </Link>
           </div>
         </div>
+        <BatchWindowControls sittings={sittings} />
+        </>
       ) : (
         <>
           {resetBatches && (
