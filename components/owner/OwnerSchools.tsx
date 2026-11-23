@@ -67,6 +67,30 @@ export default function OwnerSchools() {
     loadBilling();
     return onBillingRefresh(loadBilling);
   }, [loadBilling]);
+  // each school's timezone (how its students see exam dates and times); only the owner can change it
+  const [timezones, setTimezones] = useState<Record<string, string>>({});
+  const zoneOptions = useMemo(() => {
+    const all = (typeof Intl !== "undefined" && (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.("timeZone")) || [];
+    return all.length > 0 ? all : ["Africa/Lagos", "Africa/Accra", "Africa/Nairobi", "Africa/Johannesburg", "Europe/London", "UTC"];
+  }, []);
+  const changeTimezone = async (s: SchoolStats, timezone: string) => {
+    const before = timezones[s.school_id];
+    setTimezones((t) => ({ ...t, [s.school_id]: timezone }));
+    setError(null);
+    try {
+      const res = await fetch("/api/owner/schools/timezone", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: s.school_id, timezone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't save the timezone.");
+      setNotice(`${s.name} now uses ${timezone.replace(/_/g, " ")} for exam dates and times.`);
+    } catch (err) {
+      setTimezones((t) => ({ ...t, [s.school_id]: before }));
+      setError(err instanceof Error ? err.message : "Couldn't save the timezone.");
+    }
+  };
   const [staleCount, setStaleCount] = useState(0);
   const [showPurge, setShowPurge] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -86,6 +110,8 @@ export default function OwnerSchools() {
     try {
       const res = await fetch("/api/owner/schools");
       if (res.ok) setPendingInfo((await res.json()).pending ?? {});
+      const tz = await fetch("/api/owner/schools/timezone", { cache: "no-store" });
+      if (tz.ok) setTimezones((await tz.json()).timezones ?? {});
       const stale = await fetch("/api/owner/schools/purge-stale");
       if (stale.ok) setStaleCount((await stale.json()).count ?? 0);
     } catch {
@@ -292,6 +318,23 @@ export default function OwnerSchools() {
                 </div>
               ))}
             </div>
+
+            {s.status !== "pending" && timezones[s.school_id] && (
+              <label className="mt-3 flex items-center justify-between gap-3 text-[12px] text-ink/60 dark:text-white/60">
+                <span className="shrink-0">Timezone</span>
+                <select
+                  value={timezones[s.school_id]}
+                  onChange={(e) => changeTimezone(s, e.target.value)}
+                  className="min-w-0 max-w-[60%] rounded-md bg-background-muted px-2.5 py-1.5 text-[12px] text-ink dark:bg-white/5 dark:text-white"
+                >
+                  {(zoneOptions.includes(timezones[s.school_id]) ? zoneOptions : [timezones[s.school_id], ...zoneOptions]).map((z) => (
+                    <option key={z} value={z}>
+                      {z.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             <div className="mt-3 flex flex-wrap gap-2">
               <button
