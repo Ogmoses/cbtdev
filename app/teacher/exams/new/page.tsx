@@ -96,6 +96,7 @@ export default function NewExamPage() {
             starts_at: new Date(b.startsAt).toISOString(),
             ends_at: new Date(b.endsAt).toISOString(),
             lab_room: b.labRoom || null,
+            stays_open: !!b.staysOpen,
           }))
         )
         .select("id");
