@@ -67,7 +67,7 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream-100 dark:bg-[#101114] px-4 font-sans">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-cream-100 dark:bg-[#101114] px-4 py-6 font-sans">
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -186,6 +186,10 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
           </p>
         )}
       </motion.div>
+
+      <Link href="/welcome" className="text-[11.5px] text-ink/45 hover:text-crimson-600 dark:text-white/45">
+        powered by cbtdev.vercel.app
+      </Link>
     </div>
   );
 }
