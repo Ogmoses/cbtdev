@@ -31,6 +31,8 @@ export interface AvailableExam {
   batchLabel: string;
   batchStartsAt: string; // ISO
   batchEndsAt: string; // ISO
+  /** Worked out by the page with the shared window rule (handles sittings that stay open / were closed by the teacher). */
+  windowState?: "open" | "ended" | "upcoming";
   alreadyInProgress: boolean;
 }
 
@@ -202,8 +204,8 @@ function Section({ title, subtitle, children }: { title: string; subtitle: strin
 function ExamCard({ exam, now, onEnter }: { exam: AvailableExam; now: Date; onEnter: () => void }) {
   const startsAt = new Date(exam.batchStartsAt);
   const endsAt = new Date(exam.batchEndsAt);
-  const isOpen = now >= startsAt && now <= endsAt;
-  const isPast = now > endsAt;
+  const isOpen = exam.windowState ? exam.windowState === "open" : now >= startsAt && now <= endsAt;
+  const isPast = exam.windowState ? exam.windowState === "ended" : now > endsAt;
 
   return (
     <div className="flex w-full flex-col rounded-lg border border-black/5 bg-white p-4.5 shadow-card transition-shadow duration-200 hover:shadow-card-hover dark:border-white/10 dark:bg-[#1A1C20] sm:w-[320px]">
