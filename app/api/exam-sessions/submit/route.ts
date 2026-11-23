@@ -3,6 +3,7 @@ import { getCallerContext } from "@/lib/auth/callerContext";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { gradeObjectiveAnswers, sumAwardedPoints, type GradableQuestion, type SubmittedAnswer } from "@/lib/grading";
 import type { AnswersMap } from "@/components/exam/ExamInterface";
+import { SESSION_GRACE_MS } from "@/lib/batchWindow";
 
 /**
  * POST /api/exam-sessions/submit
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  const { data: session } = await admin.from("student_exam_sessions").select("id, exam_id, student_id, status").eq("id", sessionId).eq("school_id", ctx.schoolId).maybeSingle();
+  const { data: session } = await admin.from("student_exam_sessions").select("id, exam_id, student_id, status, deadline_at").eq("id", sessionId).eq("school_id", ctx.schoolId).maybeSingle();
   if (!session || session.student_id !== ctx.userId) return NextResponse.json({ error: "Session not found." }, { status: 404 });
   if (session.status !== "active") return NextResponse.json({ error: "This exam has already been submitted." }, { status: 409 });
 
@@ -54,7 +55,9 @@ export async function POST(req: NextRequest) {
   const typeById = new Map(gradableQuestions.map((q) => [q.id, q.type]));
 
   // ---- Persist the final answer set (covers anything since the last autosave tick) ----
-  if (answers && Object.keys(answers).length > 0) {
+  // Handed in long after their own deadline? Grade only what was saved in time — late edits aren't accepted.
+  const late = !!session.deadline_at && Date.now() > new Date(session.deadline_at).getTime() + SESSION_GRACE_MS;
+  if (!late && answers && Object.keys(answers).length > 0) {
     const rows = Object.entries(answers).map(([questionId, a]) => {
       const isObjective = typeById.get(questionId) === "multiple_choice" || typeById.get(questionId) === "true_false";
       return {
