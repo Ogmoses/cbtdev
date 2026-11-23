@@ -67,6 +67,8 @@ interface ExamInterfaceProps {
   studentName: string;
   /** Answers already saved server-side for this session (e.g. from a previous device) — used as the base state before checking this browser's local cache. */
   initialAnswers?: AnswersMap;
+  /** What is left of THIS student's own timer, as kept by the server (so a refresh never restarts it). Defaults to the full duration. */
+  initialSecondsLeft?: number;
   /** Called on the 5s autosave tick and again on manual save. Should resolve/reject. */
   onAutoSave: (answers: AnswersMap) => Promise<void>;
   /** Called on final, confirmed submission. */
@@ -83,12 +85,12 @@ const WARNING_1MIN_SECONDS = 60;
 // Component
 // ---------------------------------------------------------------------------
 
-export default function ExamInterface({ exam, sessionId, studentName, initialAnswers, onAutoSave, onSubmit }: ExamInterfaceProps) {
+export default function ExamInterface({ exam, sessionId, studentName, initialAnswers, initialSecondsLeft, onAutoSave, onSubmit }: ExamInterfaceProps) {
   const storageKey = `cbt-answers-${exam.id}-${sessionId}`;
 
   const [answers, setAnswers] = useState<AnswersMap>(initialAnswers ?? {});
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(exam.durationMinutes * 60);
+  const [secondsLeft, setSecondsLeft] = useState(initialSecondsLeft ?? exam.durationMinutes * 60);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -193,7 +195,11 @@ export default function ExamInterface({ exam, sessionId, studentName, initialAns
     }
   }, [onSubmit, persist, storageKey]);
 
-  handleSubmitRef.current = () => setConfirmOpen(true);
+  // Time's up: hand the exam in by itself, as the on-screen warning promises. If that fails (network), fall back to the
+  // confirmation panel so the student can retry.
+  handleSubmitRef.current = () => {
+    doSubmit().catch(() => setConfirmOpen(true));
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-cream-50 dark:bg-[#101114] font-sans text-ink dark:text-white">
