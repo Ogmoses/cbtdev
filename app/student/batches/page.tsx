@@ -37,13 +37,13 @@ export default function StudentBatchesPage() {
     (async () => {
       const { data } = await supabase
         .from("batch_students")
-        .select("exam_batches(id, label, starts_at, ends_at, exams(title, subjects(name)))")
+        .select("exam_batches(id, label, starts_at, ends_at, closed_at, exams(title, subjects(name)))")
         .eq("student_id", authUser.id);
 
       const now = await getReliableNow();
       const upcoming = (data ?? [])
         .map((row: any) => row.exam_batches)
-        .filter((b: any) => b && new Date(b.starts_at) > now)
+        .filter((b: any) => b && !b.closed_at && new Date(b.starts_at) > now)
         .map((b: any) => ({
           id: b.id,
           examTitle: b.exams?.title ?? "",
