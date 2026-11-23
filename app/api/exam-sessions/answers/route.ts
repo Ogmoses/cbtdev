@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCallerContext } from "@/lib/auth/callerContext";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AnswersMap } from "@/components/exam/ExamInterface";
+import { SESSION_GRACE_MS } from "@/lib/batchWindow";
 
 /**
  * POST /api/exam-sessions/answers
@@ -28,12 +29,17 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  const { data: session } = await admin.from("student_exam_sessions").select("id, exam_id, student_id, status").eq("id", sessionId).eq("school_id", ctx.schoolId).maybeSingle();
+  const { data: session } = await admin.from("student_exam_sessions").select("id, exam_id, student_id, status, deadline_at").eq("id", sessionId).eq("school_id", ctx.schoolId).maybeSingle();
   if (!session || session.student_id !== ctx.userId) {
     return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
   if (session.status !== "active") {
     return NextResponse.json({ error: "This exam has already been submitted." }, { status: 409 });
+  }
+
+  // Past their own deadline (plus a short allowance for the last auto-save to arrive), answers can no longer change.
+  if (session.deadline_at && Date.now() > new Date(session.deadline_at).getTime() + SESSION_GRACE_MS) {
+    return NextResponse.json({ error: "Your time is up." }, { status: 409 });
   }
 
   // Need each question's type to know whether the value is an option id
