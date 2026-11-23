@@ -36,6 +36,8 @@ export interface ExamBatchDraft {
   startsAt: string; // ISO
   endsAt: string; // ISO
   labRoom?: string;
+  /** Stays open until the teacher closes it (the student's own timer still applies). */
+  staysOpen?: boolean;
 }
 
 export interface ExamFormData {
@@ -432,7 +434,14 @@ export default function ExamBuilder({ subjects, classes, terms, questionBank, st
               <div>
                 <span className="mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60">Ends</span>
                 <p className="rounded-lg border border-black/10 dark:border-white/15 bg-background-muted dark:bg-white/5 px-3 py-2.5 text-[13px] text-ink/60 dark:text-white/60">
-                  {b.startsAt ? `${formatEndsAt(b.endsAt)} (${form.durationMinutes} min)` : "Set a start time"}
+                  {!b.startsAt ? "Set a start time" : b.staysOpen ? "Open until you close it" : `${formatEndsAt(b.endsAt)} (${form.durationMinutes} min)`}
+                </p>
+                <label className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-[11.5px] text-ink/60 dark:text-white/60">
+                  <input type="checkbox" checked={!!b.staysOpen} onChange={(e) => updateBatch(b.id, { staysOpen: e.target.checked })} className="accent-crimson-600" />
+                  Keep open until I close it
+                </label>
+                <p className="mt-0.5 text-[11px] leading-snug text-ink/40 dark:text-white/40">
+                  Each student still gets {form.durationMinutes} min from the moment they start.
                 </p>
               </div>
               <TextField label="Lab room" value={b.labRoom ?? ""} onChange={(v) => updateBatch(b.id, { labRoom: v })} placeholder="Optional" />
