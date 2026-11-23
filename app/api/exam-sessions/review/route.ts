@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCallerContext } from "@/lib/auth/callerContext";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { batchState } from "@/lib/batchWindow";
 
 /**
  * GET /api/exam-sessions/review?examId=...
@@ -51,10 +52,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Your teacher hasn't turned on review for this exam." }, { status: 403 });
   }
 
-  const { data: batches } = await admin.from("exam_batches").select("ends_at").eq("exam_id", examId).eq("school_id", ctx.schoolId);
-  const allBatchesEnded = (batches ?? []).every((b) => new Date(b.ends_at).getTime() <= Date.now());
+  const { data: batches } = await admin.from("exam_batches").select("starts_at, ends_at, stays_open, closed_at").eq("exam_id", examId).eq("school_id", ctx.schoolId);
+  const allBatchesEnded = (batches ?? []).every((b) => batchState(b) === "ended");
   if (!allBatchesEnded) {
-    return NextResponse.json({ error: "Review unlocks once every sitting of this exam has finished." }, { status: 403 });
+    return NextResponse.json({ error: "Review unlocks once every sitting of this exam has finished or been closed by your teacher." }, { status: 403 });
   }
 
   const { data: result } = await admin.from("results").select("total_score").eq("exam_id", examId).eq("student_id", ctx.userId).eq("school_id", ctx.schoolId).maybeSingle();
