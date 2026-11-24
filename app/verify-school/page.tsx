@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Waves, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { School, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 /**
  * Where a new school admin lands from the confirmation email. Opening the
@@ -43,7 +43,7 @@ function VerifyInner() {
     <div className="flex min-h-screen items-center justify-center bg-cream-100 dark:bg-[#101114] px-4 font-sans">
       <div className="w-full max-w-sm rounded-lg bg-white dark:bg-[#1A1C20] p-7 text-center shadow-card-hover sm:p-8">
         <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-crimson-600 text-on-crimson">
-          {done ? <CheckCircle2 size={22} /> : <Waves size={22} strokeWidth={2.25} />}
+          {done ? <CheckCircle2 size={22} /> : <School size={22} strokeWidth={2.25} />}
         </div>
 
         {!token ? (
