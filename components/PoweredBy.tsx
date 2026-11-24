@@ -5,7 +5,7 @@ import { School } from "lucide-react";
 export default function PoweredBy({ className = "" }: { className?: string }) {
   return (
     <Link href="/welcome" className={`inline-flex items-center gap-2 text-[13px] text-ink/80 dark:text-white/80 ${className}`}>
-      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-crimson-600 to-amber-500 text-white">
+      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-crimson-500 to-crimson-700 text-on-crimson">
         <School size={15} strokeWidth={2.25} />
       </span>
       <span>
