@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import {
   School,
@@ -17,14 +18,18 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { getPublicStats } from "@/lib/publicStats";
+import { getCurrentSchoolServer } from "@/lib/schoolServer";
+import { brandingCssVars, DEFAULT_SECONDARY_COLOR } from "@/lib/schoolBranding";
 import { Reveal, Float, CountUp } from "@/components/landing/Motion";
 import PoweredBy from "@/components/PoweredBy";
 
-const GRAD = "bg-gradient-to-r from-crimson-600 via-orange-500 to-amber-500 bg-clip-text text-transparent";
-const TINTS = ["from-crimson-600 to-orange-500", "from-orange-500 to-amber-500", "from-violet-600 to-fuchsia-500", "from-sky-600 to-cyan-500", "from-emerald-600 to-teal-500", "from-rose-600 to-pink-500", "from-indigo-600 to-blue-500", "from-amber-500 to-yellow-400"];
+const GRAD = "bg-gradient-to-r from-crimson-600 to-crimson-800 bg-clip-text text-transparent dark:from-crimson-300 dark:to-crimson-500";
+const TINT = "from-crimson-400 to-crimson-600 text-on-crimson";
+// Visitors (not signed in to a school) see a vivid yellow; a signed-in admin or teacher sees their school's own colour.
+const VISITOR_COLOR = "#FFC400";
 
 export const metadata: Metadata = {
-  title: "CBT Platform — computer-based exams and school management",
+  title: "CBTDEV — computer-based exams and school management",
   description: "Run computer-based exams, mark and publish results, and manage your school from one place.",
 };
 
@@ -58,7 +63,7 @@ const STEPS = [
 ];
 
 const FAQS = [
-  { q: "What is CBT Platform?", a: "A web app for running computer-based tests and managing the day-to-day of a school: students, teachers, subjects, terms, exams, results and report cards." },
+  { q: "What is CBTDEV?", a: "A web app for running computer-based tests and managing the day-to-day of a school: students, teachers, subjects, terms, exams, results and report cards." },
   { q: "Who can use it?", a: "Schools. Each school gets its own space with school admins, teachers and students, and each person signs in to see only what their role allows." },
   { q: "Can it carry my school's name and colours?", a: "Yes. Your school's name, logo and colours are used throughout, and your school has its own sign-in link to share." },
   { q: "Does it work on phones?", a: "Yes. It runs in the browser on computers and phones, so students can sit exams in a lab or on their own device, depending on how your school schedules them." },
@@ -68,14 +73,16 @@ const FAQS = [
 function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-2xl bg-white p-6 text-left shadow-card dark:bg-[#1A1C20]">
-      <p className="font-display text-[34px] font-extrabold sm:text-[44px] bg-gradient-to-r from-crimson-600 to-amber-500 bg-clip-text text-transparent"><CountUp value={value} /></p>
+      <p className="font-display text-[34px] font-extrabold sm:text-[44px] bg-gradient-to-r from-crimson-600 to-crimson-800 bg-clip-text text-transparent dark:from-crimson-300 dark:to-crimson-500"><CountUp value={value} /></p>
       <p className="mt-1 text-[15px] text-ink/60 dark:text-white/60">{label}</p>
     </div>
   );
 }
 
 export default async function WelcomePage() {
-  const stats = await getPublicStats();
+  const [stats, school] = await Promise.all([getPublicStats(), getCurrentSchoolServer()]);
+  // A signed-in school keeps its own theme (already applied app-wide); everyone else gets the vivid yellow default.
+  const visitorStyle = school ? undefined : (brandingCssVars({ themeColor: VISITOR_COLOR, secondaryColor: DEFAULT_SECONDARY_COLOR }) as CSSProperties);
   const tiles = stats
     ? [
         { value: stats.schools, label: stats.schools === 1 ? "School on the platform" : "Schools on the platform" },
@@ -86,15 +93,15 @@ export default async function WelcomePage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-white font-sans text-ink dark:bg-[#101114] dark:text-white">
+    <div style={visitorStyle} className="min-h-screen bg-white font-sans text-ink dark:bg-[#101114] dark:text-white">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-black/5 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#101114]/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/welcome" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-crimson-600 to-amber-500 text-white shadow-md">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-crimson-500 to-crimson-700 text-on-crimson shadow-md">
               <School size={17} strokeWidth={2.25} />
             </span>
-            <span className="font-display text-[19px] font-bold">CBT Platform</span>
+            <span className="font-display text-[19px] font-bold">CBTDEV</span>
           </Link>
           <nav className="flex items-center gap-2">
             <Link href="/login" className="rounded-lg px-3 py-2 text-[15px] font-medium text-ink/70 hover:text-crimson-600 dark:text-white/70">
@@ -108,20 +115,20 @@ export default async function WelcomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#1b0b0a] via-[#3a0f0b] to-[#7a1d0e] text-white">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 animate-pulse rounded-full bg-orange-500/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 animate-pulse rounded-full bg-fuchsia-500/20 blur-3xl" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#0d0d10] via-crimson-900 to-crimson-700 text-white">
+        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 animate-pulse rounded-full bg-crimson-500/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 animate-pulse rounded-full bg-crimson-300/20 blur-3xl" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-2">
           <Reveal>
-            <span className="inline-block rounded-full bg-white/10 px-4 py-1.5 text-[13.5px] font-semibold tracking-wide text-amber-300">Computer-based testing for schools</span>
+            <span className="inline-block rounded-full bg-white/10 px-4 py-1.5 text-[13.5px] font-semibold tracking-wide text-crimson-300">Computer-based testing for schools</span>
             <h1 className="mt-5 font-display text-[48px] font-extrabold leading-[1.04] tracking-tight sm:text-[68px]">
-              Exams made <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-transparent">simple</span>, results made <span className="bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">instant</span>
+              Exams made <span className="bg-gradient-to-r from-crimson-300 to-crimson-500 bg-clip-text text-transparent">simple</span>, results made <span className="bg-gradient-to-r from-crimson-200 to-crimson-400 bg-clip-text text-transparent">instant</span>
             </h1>
             <p className="mt-6 max-w-lg text-[19px] leading-relaxed text-white/75">
               Schedule exams, let students sit them on a computer, mark and publish results, and keep your whole school organised, without the paperwork.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/register-school" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-8 py-4 text-[17px] font-bold text-[#1b0b0a] shadow-lg shadow-orange-500/30 transition hover:scale-[1.03]">
+              <Link href="/register-school" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-crimson-500 to-crimson-400 px-8 py-4 text-[17px] font-bold text-on-crimson shadow-lg shadow-crimson-500/30 transition hover:scale-[1.03]">
                 Get started <ArrowRight size={17} />
               </Link>
               <Link href="/login" className="rounded-xl border border-white/30 px-8 py-4 text-center text-[17px] font-semibold text-white transition hover:bg-white/10">
@@ -132,16 +139,16 @@ export default async function WelcomePage() {
           <div className="relative mx-auto h-[360px] w-full max-w-sm">
             <Float className="absolute left-0 top-2 w-60 rounded-2xl bg-white p-4 text-ink shadow-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-ink/40">Exam in progress</p>
-              <p className="mt-1 font-display text-[28px] font-extrabold text-crimson-600">24:10</p>
-              <div className="mt-2 h-2 rounded-full bg-black/10"><div className="h-2 w-2/3 rounded-full bg-gradient-to-r from-crimson-600 to-amber-500" /></div>
+              <p className="mt-1 font-display text-[28px] font-extrabold text-crimson-700">24:10</p>
+              <div className="mt-2 h-2 rounded-full bg-black/10"><div className="h-2 w-2/3 rounded-full bg-gradient-to-r from-crimson-500 to-crimson-700" /></div>
               <p className="mt-2 text-[12px] text-ink/60">Question 14 of 20</p>
             </Float>
-            <Float delay={1.2} className="absolute right-0 top-28 w-52 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-4 text-[#1b0b0a] shadow-2xl">
+            <Float delay={1.2} className="absolute right-0 top-28 w-52 rounded-2xl bg-gradient-to-br from-crimson-400 to-crimson-600 p-4 text-on-crimson shadow-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-wider opacity-70">Result published</p>
               <p className="mt-1 font-display text-[34px] font-extrabold">19/20</p>
               <p className="text-[12px] font-medium">Submitted today, school time</p>
             </Float>
-            <Float delay={2.4} className="absolute bottom-0 left-8 w-56 rounded-2xl bg-violet-600 p-4 text-white shadow-2xl">
+            <Float delay={2.4} className="absolute bottom-0 left-8 w-56 rounded-2xl bg-crimson-800 p-4 text-white shadow-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Sitting</p>
               <p className="mt-1 text-[15px] font-bold">Batch B is open</p>
               <p className="text-[12px] text-white/75">Closes when you say so</p>
@@ -153,7 +160,7 @@ export default async function WelcomePage() {
       {/* Why */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <div className="max-w-3xl text-left">
-          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-600 sm:text-[22px]">Why CBT Platform</p>
+          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-700 sm:text-[22px]">Why CBTDEV</p>
           <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Everything an <span className={GRAD}>exam day</span> needs</h2>
           <p className="mt-4 text-[18px] leading-relaxed text-ink/60 dark:text-white/60">
             From the first question written to the report card printed, one tool covers it, so staff spend their time teaching, not chasing papers.
@@ -163,7 +170,7 @@ export default async function WelcomePage() {
           {FEATURES.map(({ icon: Icon, title, text }, i) => (
             <Reveal key={title} delay={(i % 4) * 0.08}>
             <div className="h-full rounded-2xl bg-background-muted p-6 transition hover:-translate-y-1 hover:shadow-card-hover dark:bg-white/5">
-              <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${TINTS[i % TINTS.length]} text-white shadow-md`}>
+              <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${TINT} shadow-md`}>
                 <Icon size={20} />
               </span>
               <h3 className="mt-4 font-display text-[21px] font-bold">{title}</h3>
@@ -176,7 +183,7 @@ export default async function WelcomePage() {
 
       {/* Numbers (live) */}
       {tiles.length > 0 && (
-        <section className="bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 dark:from-white/[0.03] dark:to-white/[0.03]">
+        <section className="bg-gradient-to-r from-crimson-50 to-crimson-100 dark:from-white/[0.03] dark:to-white/[0.03]">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
             <h2 className="text-left font-display text-[38px] font-extrabold leading-[1.1] sm:text-[50px]">The platform <span className={GRAD}>in numbers</span></h2>
             <div className={`mt-8 grid grid-cols-2 gap-4 ${tiles.length >= 4 ? "lg:grid-cols-4" : tiles.length === 3 ? "lg:grid-cols-3" : ""}`}>
@@ -192,14 +199,14 @@ export default async function WelcomePage() {
       {/* Audiences */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <div className="max-w-3xl text-left">
-          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-600 sm:text-[22px]">Who it is for</p>
+          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-700 sm:text-[22px]">Who it is for</p>
           <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">One platform, <span className={GRAD}>three roles</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {AUDIENCES.map(({ icon: Icon, title, text }, i) => (
             <Reveal key={title} delay={i * 0.12}>
             <div className="h-full rounded-2xl border border-black/5 bg-white p-6 shadow-card transition hover:-translate-y-1.5 hover:shadow-card-hover dark:border-white/10 dark:bg-[#1A1C20]">
-              <span className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${TINTS[(i * 2 + 1) % TINTS.length]} text-white shadow-md`}>
+              <span className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${TINT} shadow-md`}>
                 <Icon size={21} />
               </span>
               <h3 className="mt-4 font-display text-[22px] font-bold">{title}</h3>
@@ -231,14 +238,14 @@ export default async function WelcomePage() {
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <div className="max-w-3xl text-left">
-          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-600 sm:text-[22px]">How it works</p>
+          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-700 sm:text-[22px]">How it works</p>
           <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Up and running in <span className={GRAD}>three steps</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 0.12}>
             <div className="h-full rounded-2xl bg-background-muted p-6 dark:bg-white/5">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-crimson-600 to-amber-500 font-display text-[18px] font-extrabold text-white shadow-md">{s.n}</span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-crimson-500 to-crimson-700 font-display text-[18px] font-extrabold text-on-crimson shadow-md">{s.n}</span>
               <h3 className="mt-3 font-display text-[22px] font-bold">{s.title}</h3>
               <p className="mt-2 text-[16px] leading-relaxed text-ink/60 dark:text-white/60">{s.text}</p>
             </div>
@@ -264,11 +271,11 @@ export default async function WelcomePage() {
       </section>
 
       {/* Final call to action */}
-      <section className="bg-gradient-to-r from-crimson-700 via-orange-600 to-amber-500">
+      <section className="bg-gradient-to-r from-crimson-600 to-crimson-400">
         <div className="mx-auto max-w-3xl px-4 py-14 text-left sm:px-6">
-          <h2 className="font-display text-[42px] font-extrabold leading-[1.08] text-white sm:text-[56px]">Ready to bring your school online?</h2>
-          <p className="mt-4 max-w-xl text-[18px] leading-relaxed text-white/85">Register your school today and start setting up your first exam.</p>
-          <Link href="/register-school" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-[17px] font-bold text-crimson-700 hover:bg-white/90">
+          <h2 className="font-display text-[42px] font-extrabold leading-[1.08] text-on-crimson sm:text-[56px]">Ready to bring your school online?</h2>
+          <p className="mt-4 max-w-xl text-[18px] leading-relaxed text-on-crimson/85">Register your school today and start setting up your first exam.</p>
+          <Link href="/register-school" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-ink px-8 py-4 text-[17px] font-bold text-white hover:bg-ink/90">
             Get started <ArrowRight size={16} />
           </Link>
         </div>
@@ -277,7 +284,7 @@ export default async function WelcomePage() {
       {/* Footer */}
       <footer className="border-t border-black/5 dark:border-white/10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-[14px] text-ink/50 dark:text-white/50 sm:flex-row sm:px-6">
-          <p>© {new Date().getFullYear()} CBT Platform. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} CBTDEV. All rights reserved.</p>
           <PoweredBy />
         </div>
       </footer>
