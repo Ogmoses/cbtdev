@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Waves,
+  School,
   ArrowRight,
   Laptop,
   CalendarClock,
@@ -17,6 +17,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { getPublicStats } from "@/lib/publicStats";
+import { Reveal, Float, CountUp } from "@/components/landing/Motion";
+import PoweredBy from "@/components/PoweredBy";
+
+const GRAD = "bg-gradient-to-r from-crimson-600 via-orange-500 to-amber-500 bg-clip-text text-transparent";
+const TINTS = ["from-crimson-600 to-orange-500", "from-orange-500 to-amber-500", "from-violet-600 to-fuchsia-500", "from-sky-600 to-cyan-500", "from-emerald-600 to-teal-500", "from-rose-600 to-pink-500", "from-indigo-600 to-blue-500", "from-amber-500 to-yellow-400"];
 
 export const metadata: Metadata = {
   title: "CBT Platform — computer-based exams and school management",
@@ -63,7 +68,7 @@ const FAQS = [
 function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-lg bg-white p-5 text-center shadow-card dark:bg-[#1A1C20]">
-      <p className="font-display text-[28px] font-bold text-crimson-600 sm:text-[34px]">{value.toLocaleString("en-US")}</p>
+      <p className="font-display text-[34px] font-extrabold sm:text-[44px] bg-gradient-to-r from-crimson-600 to-amber-500 bg-clip-text text-transparent"><CountUp value={value} /></p>
       <p className="mt-1 text-[12.5px] text-ink/60 dark:text-white/60">{label}</p>
     </div>
   );
@@ -86,8 +91,8 @@ export default async function WelcomePage() {
       <header className="sticky top-0 z-20 border-b border-black/5 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-[#101114]/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/welcome" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-crimson-600 text-on-crimson">
-              <Waves size={17} strokeWidth={2.25} />
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-crimson-600 to-amber-500 text-white shadow-md">
+              <School size={17} strokeWidth={2.25} />
             </span>
             <span className="font-display text-[15px] font-semibold">CBT Platform</span>
           </Link>
@@ -103,21 +108,44 @@ export default async function WelcomePage() {
       </header>
 
       {/* Hero */}
-      <section className="bg-gradient-to-b from-crimson-50 to-white dark:from-crimson-900/20 dark:to-[#101114]">
-        <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-24">
-          <h1 className="font-display text-[30px] font-bold leading-tight sm:text-[44px]">
-            Computer-based exams and school management, <span className="text-crimson-600">in one place</span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-ink/65 dark:text-white/65">
-            Schedule exams, let students sit them on a computer, mark and publish results, and keep the whole school organised, without the paperwork.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/register-school" className="flex w-full items-center justify-center gap-2 rounded-lg bg-crimson-600 px-6 py-3 text-[14px] font-semibold text-on-crimson hover:bg-crimson-700 sm:w-auto">
-              Get started <ArrowRight size={16} />
-            </Link>
-            <Link href="/login" className="w-full rounded-lg border border-black/10 px-6 py-3 text-[14px] font-semibold text-ink hover:border-crimson-600 hover:text-crimson-600 dark:border-white/20 dark:text-white sm:w-auto">
-              Sign in
-            </Link>
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1b0b0a] via-[#3a0f0b] to-[#7a1d0e] text-white">
+        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 animate-pulse rounded-full bg-orange-500/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 animate-pulse rounded-full bg-fuchsia-500/20 blur-3xl" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-2">
+          <Reveal>
+            <span className="inline-block rounded-full bg-white/10 px-3.5 py-1 text-[12px] font-semibold tracking-wide text-amber-300">Computer-based testing for schools</span>
+            <h1 className="mt-5 font-display text-[40px] font-extrabold leading-[1.05] tracking-tight sm:text-[58px]">
+              Exams made <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-transparent">simple</span>, results made <span className="bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">instant</span>
+            </h1>
+            <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-white/75">
+              Schedule exams, let students sit them on a computer, mark and publish results, and keep your whole school organised, without the paperwork.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href="/register-school" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-7 py-3.5 text-[15px] font-bold text-[#1b0b0a] shadow-lg shadow-orange-500/30 transition hover:scale-[1.03]">
+                Get started <ArrowRight size={17} />
+              </Link>
+              <Link href="/login" className="rounded-xl border border-white/30 px-7 py-3.5 text-center text-[15px] font-semibold text-white transition hover:bg-white/10">
+                Sign in
+              </Link>
+            </div>
+          </Reveal>
+          <div className="relative mx-auto h-[360px] w-full max-w-sm">
+            <Float className="absolute left-0 top-2 w-60 rounded-2xl bg-white p-4 text-ink shadow-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink/40">Exam in progress</p>
+              <p className="mt-1 font-display text-[28px] font-extrabold text-crimson-600">24:10</p>
+              <div className="mt-2 h-2 rounded-full bg-black/10"><div className="h-2 w-2/3 rounded-full bg-gradient-to-r from-crimson-600 to-amber-500" /></div>
+              <p className="mt-2 text-[12px] text-ink/60">Question 14 of 20</p>
+            </Float>
+            <Float delay={1.2} className="absolute right-0 top-28 w-52 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-4 text-[#1b0b0a] shadow-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-wider opacity-70">Result published</p>
+              <p className="mt-1 font-display text-[34px] font-extrabold">19/20</p>
+              <p className="text-[12px] font-medium">Submitted today, school time</p>
+            </Float>
+            <Float delay={2.4} className="absolute bottom-0 left-8 w-56 rounded-2xl bg-violet-600 p-4 text-white shadow-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Sitting</p>
+              <p className="mt-1 text-[15px] font-bold">Batch B is open</p>
+              <p className="text-[12px] text-white/75">Closes when you say so</p>
+            </Float>
           </div>
         </div>
       </section>
@@ -126,29 +154,31 @@ export default async function WelcomePage() {
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-crimson-600">Why CBT Platform</p>
-          <h2 className="mt-2 font-display text-[24px] font-bold sm:text-[30px]">Everything an exam day needs</h2>
+          <h2 className="mt-2 font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">Everything an <span className={GRAD}>exam day</span> needs</h2>
           <p className="mt-3 text-[14.5px] leading-relaxed text-ink/60 dark:text-white/60">
             From the first question written to the report card printed, one tool covers it, so staff spend their time teaching, not chasing papers.
           </p>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="rounded-lg bg-background-muted p-5 dark:bg-white/5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-crimson-100 text-crimson-700 dark:bg-crimson-600/20 dark:text-crimson-500">
+          {FEATURES.map(({ icon: Icon, title, text }, i) => (
+            <Reveal key={title} delay={(i % 4) * 0.08}>
+            <div className="h-full rounded-2xl bg-background-muted p-5 transition hover:-translate-y-1 hover:shadow-card-hover dark:bg-white/5">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${TINTS[i % TINTS.length]} text-white shadow-md`}>
                 <Icon size={20} />
               </span>
               <h3 className="mt-3 font-display text-[15px] font-semibold">{title}</h3>
               <p className="mt-1.5 text-[13px] leading-relaxed text-ink/60 dark:text-white/60">{text}</p>
             </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* Numbers (live) */}
       {tiles.length > 0 && (
-        <section className="bg-background-muted dark:bg-white/[0.03]">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-            <h2 className="text-center font-display text-[20px] font-bold sm:text-[24px]">The platform in numbers</h2>
+        <section className="bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 dark:from-white/[0.03] dark:to-white/[0.03]">
+          <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+            <h2 className="text-center font-display text-[26px] font-extrabold sm:text-[34px]">The platform <span className={GRAD}>in numbers</span></h2>
             <div className={`mt-8 grid grid-cols-2 gap-4 ${tiles.length >= 4 ? "lg:grid-cols-4" : tiles.length === 3 ? "lg:grid-cols-3" : ""}`}>
               {tiles.map((t) => (
                 <Stat key={t.label} value={t.value} label={t.label} />
@@ -163,17 +193,19 @@ export default async function WelcomePage() {
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-crimson-600">Who it is for</p>
-          <h2 className="mt-2 font-display text-[24px] font-bold sm:text-[30px]">One platform, three roles</h2>
+          <h2 className="mt-2 font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">One platform, <span className={GRAD}>three roles</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {AUDIENCES.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="rounded-lg border border-black/5 bg-white p-6 shadow-card dark:border-white/10 dark:bg-[#1A1C20]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-crimson-600 text-on-crimson">
+          {AUDIENCES.map(({ icon: Icon, title, text }, i) => (
+            <Reveal key={title} delay={i * 0.12}>
+            <div className="h-full rounded-2xl border border-black/5 bg-white p-6 shadow-card transition hover:-translate-y-1.5 hover:shadow-card-hover dark:border-white/10 dark:bg-[#1A1C20]">
+              <span className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${TINTS[(i * 2 + 1) % TINTS.length]} text-white shadow-md`}>
                 <Icon size={21} />
               </span>
               <h3 className="mt-4 font-display text-[16px] font-semibold">{title}</h3>
               <p className="mt-2 text-[13.5px] leading-relaxed text-ink/60 dark:text-white/60">{text}</p>
             </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -200,22 +232,24 @@ export default async function WelcomePage() {
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-crimson-600">How it works</p>
-          <h2 className="mt-2 font-display text-[24px] font-bold sm:text-[30px]">Up and running in three steps</h2>
+          <h2 className="mt-2 font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">Up and running in <span className={GRAD}>three steps</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {STEPS.map((s) => (
-            <div key={s.n} className="rounded-lg bg-background-muted p-6 dark:bg-white/5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-crimson-600 font-display text-[15px] font-bold text-on-crimson">{s.n}</span>
+          {STEPS.map((s, i) => (
+            <Reveal key={s.n} delay={i * 0.12}>
+            <div className="h-full rounded-2xl bg-background-muted p-6 dark:bg-white/5">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-crimson-600 to-amber-500 font-display text-[18px] font-extrabold text-white shadow-md">{s.n}</span>
               <h3 className="mt-3 font-display text-[16px] font-semibold">{s.title}</h3>
               <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink/60 dark:text-white/60">{s.text}</p>
             </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 pb-14 sm:px-6 sm:pb-20">
-        <h2 className="text-center font-display text-[24px] font-bold sm:text-[30px]">Frequently asked questions</h2>
+        <h2 className="text-center font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">Frequently asked <span className={GRAD}>questions</span></h2>
         <div className="mt-8 space-y-3">
           {FAQS.map((f) => (
             <details key={f.q} className="group rounded-lg border border-black/5 bg-white p-4 shadow-card dark:border-white/10 dark:bg-[#1A1C20] [&[open]_svg]:rotate-180">
@@ -230,9 +264,9 @@ export default async function WelcomePage() {
       </section>
 
       {/* Final call to action */}
-      <section className="bg-crimson-600">
+      <section className="bg-gradient-to-r from-crimson-700 via-orange-600 to-amber-500">
         <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:px-6">
-          <h2 className="font-display text-[24px] font-bold text-on-crimson sm:text-[30px]">Ready to bring your school online?</h2>
+          <h2 className="font-display text-[30px] font-extrabold text-white sm:text-[40px]">Ready to bring your school online?</h2>
           <p className="mx-auto mt-3 max-w-xl text-[14.5px] leading-relaxed text-on-crimson/80">Register your school today and start setting up your first exam.</p>
           <Link href="/register-school" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-[14px] font-semibold text-crimson-700 hover:bg-white/90">
             Get started <ArrowRight size={16} />
@@ -244,10 +278,7 @@ export default async function WelcomePage() {
       <footer className="border-t border-black/5 dark:border-white/10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-[12px] text-ink/50 dark:text-white/50 sm:flex-row sm:px-6">
           <p>© {new Date().getFullYear()} CBT Platform. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="hover:text-crimson-600">Sign in</Link>
-            <Link href="/register-school" className="hover:text-crimson-600">Register your school</Link>
-          </div>
+          <PoweredBy />
         </div>
       </footer>
     </div>
