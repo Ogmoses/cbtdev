@@ -38,6 +38,8 @@ export interface ExamBatchDraft {
   labRoom?: string;
   /** Stays open until the teacher closes it (the student's own timer still applies). */
   staysOpen?: boolean;
+  /** How long the window stays open after its start, in minutes. Unset = the exam's own duration. */
+  windowMinutes?: number;
 }
 
 export interface ExamFormData {
@@ -181,7 +183,7 @@ export default function ExamBuilder({ subjects, classes, terms, questionBank, st
   const updateBatch = (id: string, patch: Partial<ExamBatchDraft>) =>
     update("batches", form.batches.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   const updateBatchStart = (id: string, startsAt: string) =>
-    updateBatch(id, { startsAt, endsAt: addMinutes(startsAt, form.durationMinutes) });
+    updateBatch(id, { startsAt, endsAt: addMinutes(startsAt, form.batches.find((x) => x.id === id)?.windowMinutes ?? form.durationMinutes) });
   const removeBatch = (id: string) => update("batches", form.batches.filter((b) => b.id !== id));
 
   const updateDuration = (minutes: number) => {
@@ -189,7 +191,7 @@ export default function ExamBuilder({ subjects, classes, terms, questionBank, st
     // instead of letting them silently drift apart — this used to be two
     // independently-typed fields with nothing keeping them consistent.
     update("durationMinutes", minutes);
-    update("batches", form.batches.map((b) => (b.startsAt ? { ...b, endsAt: addMinutes(b.startsAt, minutes) } : b)));
+    update("batches", form.batches.map((b) => (b.startsAt ? { ...b, endsAt: addMinutes(b.startsAt, b.windowMinutes ?? minutes) } : b)));
   };
 
   const roster = studentsByClass[form.classId] ?? [];
@@ -434,12 +436,38 @@ export default function ExamBuilder({ subjects, classes, terms, questionBank, st
               <div>
                 <span className="mb-1 block text-[12px] font-medium text-ink/60 dark:text-white/60">Ends</span>
                 <p className="rounded-lg border border-black/10 dark:border-white/15 bg-background-muted dark:bg-white/5 px-3 py-2.5 text-[13px] text-ink/60 dark:text-white/60">
-                  {!b.startsAt ? "Set a start time" : b.staysOpen ? "Open until you close it" : `${formatEndsAt(b.endsAt)} (${form.durationMinutes} min)`}
+                  {!b.startsAt ? "Set a start time" : b.staysOpen ? "Open until you close it" : `${formatEndsAt(b.endsAt)}`}
                 </p>
-                <label className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-[11.5px] text-ink/60 dark:text-white/60">
-                  <input type="checkbox" checked={!!b.staysOpen} onChange={(e) => updateBatch(b.id, { staysOpen: e.target.checked })} className="accent-crimson-600" />
-                  Keep open until I close it
+                <label className="mt-1.5 block text-[11.5px] text-ink/60 dark:text-white/60">
+                  Keep the window open
+                  <select
+                    value={b.staysOpen ? "open" : b.windowMinutes == null ? "duration" : [60, 120, 1440].includes(b.windowMinutes) ? String(b.windowMinutes) : "custom"}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "open") return updateBatch(b.id, { staysOpen: true });
+                      const mins = v === "duration" ? undefined : v === "custom" ? (b.windowMinutes ?? 180) : Number(v);
+                      updateBatch(b.id, { staysOpen: false, windowMinutes: mins, endsAt: b.startsAt ? addMinutes(b.startsAt, mins ?? form.durationMinutes) : b.endsAt });
+                    }}
+                    className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-[12.5px] text-ink dark:border-white/15 dark:bg-white/5 dark:text-white"
+                  >
+                    <option value="duration">Only for the exam time ({form.durationMinutes} min)</option>
+                    <option value="60">For 1 hour</option>
+                    <option value="120">For 2 hours</option>
+                    <option value="1440">For 1 day</option>
+                    <option value="custom">Custom length…</option>
+                    <option value="open">Until I close it</option>
+                  </select>
                 </label>
+                {!b.staysOpen && b.windowMinutes != null && ![60, 120, 1440].includes(b.windowMinutes) && (
+                  <label className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-ink/60 dark:text-white/60">
+                    Hours open
+                    <input
+                      type="number" min={0.25} step={0.25} value={+(b.windowMinutes / 60).toFixed(2)}
+                      onChange={(e) => { const mins = Math.max(15, Math.round(Number(e.target.value) * 60)); updateBatch(b.id, { windowMinutes: mins, endsAt: b.startsAt ? addMinutes(b.startsAt, mins) : b.endsAt }); }}
+                      className="w-20 rounded-lg border border-black/10 bg-white px-2 py-1 text-[12.5px] dark:border-white/15 dark:bg-white/5"
+                    />
+                  </label>
+                )}
                 <p className="mt-0.5 text-[11px] leading-snug text-ink/40 dark:text-white/40">
                   Each student still gets {form.durationMinutes} min from the moment they start.
                 </p>
