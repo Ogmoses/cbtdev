@@ -14,7 +14,8 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Waves, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import PoweredBy from "@/components/PoweredBy";
+import { School, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useSchoolProfile, schoolAcronym, schoolSlug } from "@/lib/useSchoolProfile";
 
 type Mode = "student" | "staff";
@@ -79,7 +80,7 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
             <img src={school.logoUrl} alt="" className="mb-3 h-11 w-11 rounded-lg object-cover" />
           ) : (
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-crimson-600 text-on-crimson">
-              <Waves size={22} strokeWidth={2.25} />
+              <School size={22} strokeWidth={2.25} />
             </div>
           )}
           <h1 className="font-display text-[17px] font-semibold text-ink dark:text-white">{school.name}</h1>
@@ -187,9 +188,7 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
         )}
       </motion.div>
 
-      <Link href="/welcome" className="text-[11.5px] text-ink/45 hover:text-crimson-600 dark:text-white/45">
-        powered by cbtdev.vercel.app
-      </Link>
+      <PoweredBy />
     </div>
   );
 }
