@@ -101,6 +101,10 @@ export default function EditExamPage() {
                 endsAt: b.ends_at,
                 labRoom: b.lab_room ?? undefined,
                 staysOpen: !!b.stays_open,
+                windowMinutes: (() => {
+                  const mins = Math.round((new Date(b.ends_at).getTime() - new Date(b.starts_at).getTime()) / 60000);
+                  return mins === exam.duration_minutes ? undefined : mins;
+                })(),
               })),
       });
       setLoadingExam(false);
