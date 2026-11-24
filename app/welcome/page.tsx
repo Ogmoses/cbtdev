@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { getPublicStats } from "@/lib/publicStats";
 import { getCurrentSchoolServer } from "@/lib/schoolServer";
-import { brandingCssVars, DEFAULT_SECONDARY_COLOR } from "@/lib/schoolBranding";
+import { brandingCssVars, fetchBrandingByCode, DEFAULT_SECONDARY_COLOR } from "@/lib/schoolBranding";
+import { createClient } from "@/lib/supabase/server";
 import { Reveal, Float, CountUp } from "@/components/landing/Motion";
 import PoweredBy from "@/components/PoweredBy";
 
@@ -79,10 +80,17 @@ function Stat({ value, label }: { value: number; label: string }) {
   );
 }
 
-export default async function WelcomePage() {
+export default async function WelcomePage({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
+  const { s: rawCode } = await searchParams;
+  const code = typeof rawCode === "string" && /^[a-z0-9-]{1,64}$/i.test(rawCode) ? rawCode.toLowerCase() : null;
   const [stats, school] = await Promise.all([getPublicStats(), getCurrentSchoolServer()]);
-  // A signed-in school keeps its own theme (already applied app-wide); everyone else gets the vivid yellow default.
-  const visitorStyle = school ? undefined : (brandingCssVars({ themeColor: VISITOR_COLOR, secondaryColor: DEFAULT_SECONDARY_COLOR }) as CSSProperties);
+  // Colours: a signed-in school keeps its own theme (already applied app-wide). Someone who arrived from a school's
+  // sign-in page (/welcome?s=<code>) sees that school's colour. Everyone else gets the vivid yellow default.
+  const linked = !school && code ? await fetchBrandingByCode(await createClient(), code) : null;
+  const visitorStyle = school
+    ? undefined
+    : (brandingCssVars({ themeColor: linked?.themeColor ?? VISITOR_COLOR, secondaryColor: linked?.secondaryColor ?? DEFAULT_SECONDARY_COLOR }) as CSSProperties);
+  const signInHref = linked ? `/s/${code}` : "/login";
   const tiles = stats
     ? [
         { value: stats.schools, label: stats.schools === 1 ? "School on the platform" : "Schools on the platform" },
@@ -104,7 +112,7 @@ export default async function WelcomePage() {
             <span className="font-display text-[19px] font-bold">CBTDEV</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <Link href="/login" className="rounded-lg px-3 py-2 text-[15px] font-medium text-ink/70 hover:text-crimson-600 dark:text-white/70">
+            <Link href={signInHref} className="rounded-lg px-3 py-2 text-[15px] font-medium text-ink/70 hover:text-crimson-600 dark:text-white/70">
               Sign in
             </Link>
             <Link href="/register-school" className="rounded-lg bg-crimson-600 px-4 py-2.5 text-[15px] font-semibold text-on-crimson hover:bg-crimson-700">
@@ -131,7 +139,7 @@ export default async function WelcomePage() {
               <Link href="/register-school" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-crimson-500 to-crimson-400 px-8 py-4 text-[17px] font-bold text-on-crimson shadow-lg shadow-crimson-500/30 transition hover:scale-[1.03]">
                 Get started <ArrowRight size={17} />
               </Link>
-              <Link href="/login" className="rounded-xl border border-white/30 px-8 py-4 text-center text-[17px] font-semibold text-white transition hover:bg-white/10">
+              <Link href={signInHref} className="rounded-xl border border-white/30 px-8 py-4 text-center text-[17px] font-semibold text-white transition hover:bg-white/10">
                 Sign in
               </Link>
             </div>
@@ -285,7 +293,7 @@ export default async function WelcomePage() {
       <footer className="border-t border-black/5 dark:border-white/10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-[14px] text-ink/50 dark:text-white/50 sm:flex-row sm:px-6">
           <p>© {new Date().getFullYear()} CBTDEV. All rights reserved.</p>
-          <PoweredBy />
+          <PoweredBy schoolCode={linked ? (code ?? undefined) : undefined} />
         </div>
       </footer>
     </div>
