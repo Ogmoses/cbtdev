@@ -15,6 +15,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import PoweredBy from "@/components/PoweredBy";
+import { usePathname } from "next/navigation";
 import { School, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useSchoolProfile, schoolAcronym, schoolSlug } from "@/lib/useSchoolProfile";
 
@@ -30,6 +31,7 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onStudentLogin, onStaffLogin, school: schoolOverride, showRegisterSchool }: LoginFormProps) {
+  const pathname = usePathname();
   const defaultSchool = useSchoolProfile();
   const school = schoolOverride ?? defaultSchool;
   const [mode, setMode] = useState<Mode>("student");
@@ -188,7 +190,7 @@ export default function LoginForm({ onStudentLogin, onStaffLogin, school: school
         )}
       </motion.div>
 
-      <PoweredBy />
+      <PoweredBy schoolCode={pathname.match(/^\/s\/([^/?#]+)/)?.[1]} />
     </div>
   );
 }
