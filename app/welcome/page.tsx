@@ -67,7 +67,7 @@ const FAQS = [
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-lg bg-white p-5 text-center shadow-card dark:bg-[#1A1C20]">
+    <div className="rounded-2xl bg-white p-6 text-left shadow-card dark:bg-[#1A1C20]">
       <p className="font-display text-[34px] font-extrabold sm:text-[44px] bg-gradient-to-r from-crimson-600 to-amber-500 bg-clip-text text-transparent"><CountUp value={value} /></p>
       <p className="mt-1 text-[15px] text-ink/60 dark:text-white/60">{label}</p>
     </div>
@@ -152,8 +152,8 @@ export default async function WelcomePage() {
 
       {/* Why */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[14px] font-bold uppercase tracking-wider text-crimson-600">Why CBT Platform</p>
+        <div className="max-w-3xl text-left">
+          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-600 sm:text-[22px]">Why CBT Platform</p>
           <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Everything an <span className={GRAD}>exam day</span> needs</h2>
           <p className="mt-4 text-[18px] leading-relaxed text-ink/60 dark:text-white/60">
             From the first question written to the report card printed, one tool covers it, so staff spend their time teaching, not chasing papers.
@@ -178,21 +178,21 @@ export default async function WelcomePage() {
       {tiles.length > 0 && (
         <section className="bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 dark:from-white/[0.03] dark:to-white/[0.03]">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-            <h2 className="text-center font-display text-[38px] font-extrabold leading-[1.1] sm:text-[50px]">The platform <span className={GRAD}>in numbers</span></h2>
+            <h2 className="text-left font-display text-[38px] font-extrabold leading-[1.1] sm:text-[50px]">The platform <span className={GRAD}>in numbers</span></h2>
             <div className={`mt-8 grid grid-cols-2 gap-4 ${tiles.length >= 4 ? "lg:grid-cols-4" : tiles.length === 3 ? "lg:grid-cols-3" : ""}`}>
               {tiles.map((t) => (
                 <Stat key={t.label} value={t.value} label={t.label} />
               ))}
             </div>
-            <p className="mt-4 text-center text-[13px] text-ink/45 dark:text-white/40">Live totals, refreshed every few minutes.</p>
+            <p className="mt-4 text-left text-[13px] text-ink/45 dark:text-white/40">Live totals, refreshed every few minutes.</p>
           </div>
         </section>
       )}
 
       {/* Audiences */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[14px] font-bold uppercase tracking-wider text-crimson-600">Who it is for</p>
+        <div className="max-w-3xl text-left">
+          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-600 sm:text-[22px]">Who it is for</p>
           <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">One platform, <span className={GRAD}>three roles</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -214,7 +214,7 @@ export default async function WelcomePage() {
       {SCREENSHOTS.length > 0 && (
         <section className="bg-background-muted dark:bg-white/[0.03]">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-            <h2 className="text-center font-display text-[24px] font-bold sm:text-[30px]">See it in action</h2>
+            <h2 className="text-left font-display text-[24px] font-bold sm:text-[30px]">See it in action</h2>
             <div className="mt-10 flex gap-5 overflow-x-auto pb-2 sm:justify-center">
               {SCREENSHOTS.map((s) => (
                 <figure key={s.src} className="w-[220px] shrink-0 sm:w-[240px]">
@@ -230,8 +230,8 @@ export default async function WelcomePage() {
 
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-[14px] font-bold uppercase tracking-wider text-crimson-600">How it works</p>
+        <div className="max-w-3xl text-left">
+          <p className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-crimson-600 sm:text-[22px]">How it works</p>
           <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Up and running in <span className={GRAD}>three steps</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -249,7 +249,7 @@ export default async function WelcomePage() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 pb-14 sm:px-6 sm:pb-20">
-        <h2 className="text-center font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Frequently asked <span className={GRAD}>questions</span></h2>
+        <h2 className="text-left font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Frequently asked <span className={GRAD}>questions</span></h2>
         <div className="mt-8 space-y-3">
           {FAQS.map((f) => (
             <details key={f.q} className="group rounded-lg border border-black/5 bg-white p-4 shadow-card dark:border-white/10 dark:bg-[#1A1C20] [&[open]_svg]:rotate-180">
@@ -265,9 +265,9 @@ export default async function WelcomePage() {
 
       {/* Final call to action */}
       <section className="bg-gradient-to-r from-crimson-700 via-orange-600 to-amber-500">
-        <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:px-6">
+        <div className="mx-auto max-w-3xl px-4 py-14 text-left sm:px-6">
           <h2 className="font-display text-[42px] font-extrabold leading-[1.08] text-white sm:text-[56px]">Ready to bring your school online?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-[18px] leading-relaxed text-white/85">Register your school today and start setting up your first exam.</p>
+          <p className="mt-4 max-w-xl text-[18px] leading-relaxed text-white/85">Register your school today and start setting up your first exam.</p>
           <Link href="/register-school" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-[17px] font-bold text-crimson-700 hover:bg-white/90">
             Get started <ArrowRight size={16} />
           </Link>
