@@ -280,9 +280,9 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
 
       {/* Final call to action */}
       <section className="bg-gradient-to-r from-crimson-600 to-crimson-400">
-        <div className="mx-auto max-w-3xl px-4 py-14 text-left sm:px-6">
+        <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:px-6">
           <h2 className="font-display text-[42px] font-extrabold leading-[1.08] text-on-crimson sm:text-[56px]">Ready to bring your school online?</h2>
-          <p className="mt-4 max-w-xl text-[18px] leading-relaxed text-on-crimson/85">Register your school today and start setting up your first exam.</p>
+          <p className="mx-auto mt-4 max-w-xl text-[18px] leading-relaxed text-on-crimson/85">Register your school today and start setting up your first exam.</p>
           <Link href="/register-school" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-ink px-8 py-4 text-[17px] font-bold text-white hover:bg-ink/90">
             Get started <ArrowRight size={16} />
           </Link>
