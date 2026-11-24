@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Waves, Eye, EyeOff, Loader2, AlertCircle, MailCheck } from "lucide-react";
+import { School, Eye, EyeOff, Loader2, AlertCircle, MailCheck } from "lucide-react";
 
 /** "Bright Future Academy" -> "bright-future-academy" */
 function slugify(name: string): string {
@@ -169,7 +169,7 @@ export default function RegisterSchoolPage() {
       <div className="w-full max-w-sm rounded-lg bg-white dark:bg-[#1A1C20] p-7 shadow-card-hover sm:p-8">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-crimson-600 text-on-crimson">
-            <Waves size={22} strokeWidth={2.25} />
+            <School size={22} strokeWidth={2.25} />
           </div>
           <h1 className="font-display text-[17px] font-semibold text-ink dark:text-white">Register your school</h1>
           <p className="mt-1 text-[12.5px] text-ink/50 dark:text-white/50">Takes a minute. We review every request before it goes live.</p>
