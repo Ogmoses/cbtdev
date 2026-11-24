@@ -15,7 +15,7 @@
 
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Waves, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { School, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useSchoolProfile } from "@/lib/useSchoolProfile";
 
 // Next.js requires useSearchParams() to sit inside a Suspense boundary on a
@@ -122,7 +122,7 @@ function SetPasswordInner() {
             <img src={school.logoUrl} alt="" className="mb-3 h-11 w-11 rounded-lg object-cover" />
           ) : (
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-crimson-600 text-on-crimson">
-              <Waves size={22} strokeWidth={2.25} />
+              <School size={22} strokeWidth={2.25} />
             </div>
           )}
           <h1 className="font-display text-[17px] font-semibold text-ink dark:text-white">Welcome to {school.name}</h1>
