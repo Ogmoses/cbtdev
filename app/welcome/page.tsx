@@ -69,7 +69,7 @@ function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-lg bg-white p-5 text-center shadow-card dark:bg-[#1A1C20]">
       <p className="font-display text-[34px] font-extrabold sm:text-[44px] bg-gradient-to-r from-crimson-600 to-amber-500 bg-clip-text text-transparent"><CountUp value={value} /></p>
-      <p className="mt-1 text-[12.5px] text-ink/60 dark:text-white/60">{label}</p>
+      <p className="mt-1 text-[15px] text-ink/60 dark:text-white/60">{label}</p>
     </div>
   );
 }
@@ -94,13 +94,13 @@ export default async function WelcomePage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-crimson-600 to-amber-500 text-white shadow-md">
               <School size={17} strokeWidth={2.25} />
             </span>
-            <span className="font-display text-[15px] font-semibold">CBT Platform</span>
+            <span className="font-display text-[19px] font-bold">CBT Platform</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <Link href="/login" className="rounded-lg px-3 py-2 text-[13px] font-medium text-ink/70 hover:text-crimson-600 dark:text-white/70">
+            <Link href="/login" className="rounded-lg px-3 py-2 text-[15px] font-medium text-ink/70 hover:text-crimson-600 dark:text-white/70">
               Sign in
             </Link>
-            <Link href="/register-school" className="rounded-lg bg-crimson-600 px-3.5 py-2 text-[13px] font-semibold text-on-crimson hover:bg-crimson-700">
+            <Link href="/register-school" className="rounded-lg bg-crimson-600 px-4 py-2.5 text-[15px] font-semibold text-on-crimson hover:bg-crimson-700">
               Get started
             </Link>
           </nav>
@@ -113,18 +113,18 @@ export default async function WelcomePage() {
         <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 animate-pulse rounded-full bg-fuchsia-500/20 blur-3xl" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-2">
           <Reveal>
-            <span className="inline-block rounded-full bg-white/10 px-3.5 py-1 text-[12px] font-semibold tracking-wide text-amber-300">Computer-based testing for schools</span>
-            <h1 className="mt-5 font-display text-[40px] font-extrabold leading-[1.05] tracking-tight sm:text-[58px]">
+            <span className="inline-block rounded-full bg-white/10 px-4 py-1.5 text-[13.5px] font-semibold tracking-wide text-amber-300">Computer-based testing for schools</span>
+            <h1 className="mt-5 font-display text-[48px] font-extrabold leading-[1.04] tracking-tight sm:text-[68px]">
               Exams made <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-transparent">simple</span>, results made <span className="bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">instant</span>
             </h1>
-            <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-white/75">
+            <p className="mt-6 max-w-lg text-[19px] leading-relaxed text-white/75">
               Schedule exams, let students sit them on a computer, mark and publish results, and keep your whole school organised, without the paperwork.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/register-school" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-7 py-3.5 text-[15px] font-bold text-[#1b0b0a] shadow-lg shadow-orange-500/30 transition hover:scale-[1.03]">
+              <Link href="/register-school" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-8 py-4 text-[17px] font-bold text-[#1b0b0a] shadow-lg shadow-orange-500/30 transition hover:scale-[1.03]">
                 Get started <ArrowRight size={17} />
               </Link>
-              <Link href="/login" className="rounded-xl border border-white/30 px-7 py-3.5 text-center text-[15px] font-semibold text-white transition hover:bg-white/10">
+              <Link href="/login" className="rounded-xl border border-white/30 px-8 py-4 text-center text-[17px] font-semibold text-white transition hover:bg-white/10">
                 Sign in
               </Link>
             </div>
@@ -152,22 +152,22 @@ export default async function WelcomePage() {
 
       {/* Why */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-crimson-600">Why CBT Platform</p>
-          <h2 className="mt-2 font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">Everything an <span className={GRAD}>exam day</span> needs</h2>
-          <p className="mt-3 text-[14.5px] leading-relaxed text-ink/60 dark:text-white/60">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-[14px] font-bold uppercase tracking-wider text-crimson-600">Why CBT Platform</p>
+          <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Everything an <span className={GRAD}>exam day</span> needs</h2>
+          <p className="mt-4 text-[18px] leading-relaxed text-ink/60 dark:text-white/60">
             From the first question written to the report card printed, one tool covers it, so staff spend their time teaching, not chasing papers.
           </p>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ icon: Icon, title, text }, i) => (
             <Reveal key={title} delay={(i % 4) * 0.08}>
-            <div className="h-full rounded-2xl bg-background-muted p-5 transition hover:-translate-y-1 hover:shadow-card-hover dark:bg-white/5">
+            <div className="h-full rounded-2xl bg-background-muted p-6 transition hover:-translate-y-1 hover:shadow-card-hover dark:bg-white/5">
               <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${TINTS[i % TINTS.length]} text-white shadow-md`}>
                 <Icon size={20} />
               </span>
-              <h3 className="mt-3 font-display text-[15px] font-semibold">{title}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-ink/60 dark:text-white/60">{text}</p>
+              <h3 className="mt-4 font-display text-[21px] font-bold">{title}</h3>
+              <p className="mt-2 text-[16px] leading-relaxed text-ink/60 dark:text-white/60">{text}</p>
             </div>
             </Reveal>
           ))}
@@ -178,22 +178,22 @@ export default async function WelcomePage() {
       {tiles.length > 0 && (
         <section className="bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 dark:from-white/[0.03] dark:to-white/[0.03]">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-            <h2 className="text-center font-display text-[26px] font-extrabold sm:text-[34px]">The platform <span className={GRAD}>in numbers</span></h2>
+            <h2 className="text-center font-display text-[38px] font-extrabold leading-[1.1] sm:text-[50px]">The platform <span className={GRAD}>in numbers</span></h2>
             <div className={`mt-8 grid grid-cols-2 gap-4 ${tiles.length >= 4 ? "lg:grid-cols-4" : tiles.length === 3 ? "lg:grid-cols-3" : ""}`}>
               {tiles.map((t) => (
                 <Stat key={t.label} value={t.value} label={t.label} />
               ))}
             </div>
-            <p className="mt-4 text-center text-[11.5px] text-ink/40 dark:text-white/40">Live totals, refreshed every few minutes.</p>
+            <p className="mt-4 text-center text-[13px] text-ink/45 dark:text-white/40">Live totals, refreshed every few minutes.</p>
           </div>
         </section>
       )}
 
       {/* Audiences */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-crimson-600">Who it is for</p>
-          <h2 className="mt-2 font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">One platform, <span className={GRAD}>three roles</span></h2>
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-[14px] font-bold uppercase tracking-wider text-crimson-600">Who it is for</p>
+          <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">One platform, <span className={GRAD}>three roles</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {AUDIENCES.map(({ icon: Icon, title, text }, i) => (
@@ -202,8 +202,8 @@ export default async function WelcomePage() {
               <span className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${TINTS[(i * 2 + 1) % TINTS.length]} text-white shadow-md`}>
                 <Icon size={21} />
               </span>
-              <h3 className="mt-4 font-display text-[16px] font-semibold">{title}</h3>
-              <p className="mt-2 text-[13.5px] leading-relaxed text-ink/60 dark:text-white/60">{text}</p>
+              <h3 className="mt-4 font-display text-[22px] font-bold">{title}</h3>
+              <p className="mt-2 text-[16px] leading-relaxed text-ink/60 dark:text-white/60">{text}</p>
             </div>
             </Reveal>
           ))}
@@ -230,17 +230,17 @@ export default async function WelcomePage() {
 
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-crimson-600">How it works</p>
-          <h2 className="mt-2 font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">Up and running in <span className={GRAD}>three steps</span></h2>
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-[14px] font-bold uppercase tracking-wider text-crimson-600">How it works</p>
+          <h2 className="mt-2 font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Up and running in <span className={GRAD}>three steps</span></h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 0.12}>
             <div className="h-full rounded-2xl bg-background-muted p-6 dark:bg-white/5">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-crimson-600 to-amber-500 font-display text-[18px] font-extrabold text-white shadow-md">{s.n}</span>
-              <h3 className="mt-3 font-display text-[16px] font-semibold">{s.title}</h3>
-              <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink/60 dark:text-white/60">{s.text}</p>
+              <h3 className="mt-3 font-display text-[22px] font-bold">{s.title}</h3>
+              <p className="mt-2 text-[16px] leading-relaxed text-ink/60 dark:text-white/60">{s.text}</p>
             </div>
             </Reveal>
           ))}
@@ -249,15 +249,15 @@ export default async function WelcomePage() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 pb-14 sm:px-6 sm:pb-20">
-        <h2 className="text-center font-display text-[30px] font-extrabold tracking-tight sm:text-[40px]">Frequently asked <span className={GRAD}>questions</span></h2>
+        <h2 className="text-center font-display text-[42px] font-extrabold leading-[1.08] tracking-tight sm:text-[56px]">Frequently asked <span className={GRAD}>questions</span></h2>
         <div className="mt-8 space-y-3">
           {FAQS.map((f) => (
             <details key={f.q} className="group rounded-lg border border-black/5 bg-white p-4 shadow-card dark:border-white/10 dark:bg-[#1A1C20] [&[open]_svg]:rotate-180">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[14px] font-semibold [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[18px] font-bold [&::-webkit-details-marker]:hidden">
                 {f.q}
                 <ChevronDown size={17} className="shrink-0 text-ink/40 transition-transform dark:text-white/40" />
               </summary>
-              <p className="mt-3 text-[13.5px] leading-relaxed text-ink/60 dark:text-white/60">{f.a}</p>
+              <p className="mt-3 text-[16px] leading-relaxed text-ink/60 dark:text-white/60">{f.a}</p>
             </details>
           ))}
         </div>
@@ -266,9 +266,9 @@ export default async function WelcomePage() {
       {/* Final call to action */}
       <section className="bg-gradient-to-r from-crimson-700 via-orange-600 to-amber-500">
         <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:px-6">
-          <h2 className="font-display text-[30px] font-extrabold text-white sm:text-[40px]">Ready to bring your school online?</h2>
-          <p className="mx-auto mt-3 max-w-xl text-[14.5px] leading-relaxed text-on-crimson/80">Register your school today and start setting up your first exam.</p>
-          <Link href="/register-school" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-[14px] font-semibold text-crimson-700 hover:bg-white/90">
+          <h2 className="font-display text-[42px] font-extrabold leading-[1.08] text-white sm:text-[56px]">Ready to bring your school online?</h2>
+          <p className="mx-auto mt-4 max-w-xl text-[18px] leading-relaxed text-white/85">Register your school today and start setting up your first exam.</p>
+          <Link href="/register-school" className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-[17px] font-bold text-crimson-700 hover:bg-white/90">
             Get started <ArrowRight size={16} />
           </Link>
         </div>
@@ -276,7 +276,7 @@ export default async function WelcomePage() {
 
       {/* Footer */}
       <footer className="border-t border-black/5 dark:border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-[12px] text-ink/50 dark:text-white/50 sm:flex-row sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-[14px] text-ink/50 dark:text-white/50 sm:flex-row sm:px-6">
           <p>© {new Date().getFullYear()} CBT Platform. All rights reserved.</p>
           <PoweredBy />
         </div>
