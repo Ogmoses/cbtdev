@@ -16,7 +16,7 @@ import {
   Settings,
   FileText,
   X,
-  Waves,
+  School,
   Building2,
   Power,
   ShieldAlert,
@@ -112,7 +112,7 @@ function SidebarContent({ role, userName, onNavigate }: { role: Role; userName: 
           <img src={school.logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
         ) : (
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-crimson-600 text-on-crimson">
-            <Waves size={18} strokeWidth={2.25} />
+            <School size={18} strokeWidth={2.25} />
           </div>
         )}
         <div className="min-w-0 leading-tight">
